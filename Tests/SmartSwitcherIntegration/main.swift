@@ -13,6 +13,7 @@ final class IntegrationApp: NSObject, NSApplicationDelegate {
     private var window: NSWindow!
     private var textView: NSTextView!
     private var engine: SwitcherEngine!
+    private var preferences: Preferences!
     private let layouts = LayoutController()
     private var failures = 0
     private var passed = 0
@@ -21,6 +22,7 @@ final class IntegrationApp: NSObject, NSApplicationDelegate {
         let defaults = UserDefaults(suiteName: "com.smartswitcher.integration")!
         defaults.removePersistentDomain(forName: "com.smartswitcher.integration")
         let preferences = Preferences(defaults: defaults)
+        self.preferences = preferences
 
         let dictionaries = DictionaryService()
         let ngrams = NGramModel()
@@ -32,7 +34,7 @@ final class IntegrationApp: NSObject, NSApplicationDelegate {
             buffer: InputBuffer(),
             layouts: layouts,
             replacer: TextReplacer(),
-            exclusions: AppExclusionManager(preferences: preferences),
+            appRules: AppRulesManager(preferences: preferences),
             wordRules: WordRulesManager(preferences: preferences),
             preferences: preferences,
             focus: FocusInspector()
@@ -64,17 +66,49 @@ final class IntegrationApp: NSObject, NSApplicationDelegate {
     /// (как настоящее нажатие, которое listen-only tap только наблюдает),
     /// затем отдаётся движку. На разделителе движок может вызвать TextReplacer,
     /// который удалит мусор и впечатает исправление поверх уже набранного.
-    private func feed(_ text: String) {
+    private func feed(_ text: String, flags: CGEventFlags = []) {
         for ch in text {
             DispatchQueue.main.sync { self.textView.insertText(String(ch), replacementRange: NSRange(location: NSNotFound, length: 0)) }
             let keyCode: Int64 = ch == " " ? 49 : 0
             let event = EventTapManager.TapEvent.keyDown(
                 keyCode: keyCode,
-                flags: [],
+                flags: flags,
                 characters: String(ch)
             )
             DispatchQueue.main.sync { self.engine.handle(event) }
             usleep(20000)
+        }
+    }
+
+    /// Enter: перевод строки в поле + событие движку.
+    private func pressEnter() {
+        DispatchQueue.main.sync { self.textView.insertText("\n", replacementRange: NSRange(location: NSNotFound, length: 0)) }
+        engine.handle(.keyDown(keyCode: 36, flags: [], characters: "\r"))
+        usleep(20000)
+    }
+
+    /// Два быстрых одиночных нажатия левого Shift.
+    private func doubleShift() {
+        let t = ProcessInfo.processInfo.systemUptime
+        for (offset, flags) in [(0.0, CGEventFlags.maskShift), (0.05, []), (0.10, .maskShift), (0.15, [])] {
+            engine.handle(.flagsChanged(keyCode: 56, flags: flags, timestamp: t + offset))
+        }
+        usleep(400000)
+    }
+
+    /// Сценарий с произвольными действиями и проверкой итогового текста.
+    private func scenario(_ name: String, expect expected: String, actions: () -> Void) {
+        DispatchQueue.main.sync { self.textView.string = "" }
+        engine.handle(.contextLost)
+        actions()
+        usleep(500000)
+        let result = DispatchQueue.main.sync { self.textView.string }
+        if result == expected {
+            passed += 1
+            print("  ✓ \(name): → '\(result.replacingOccurrences(of: "\n", with: "⏎"))'")
+        } else {
+            failures += 1
+            print("  ✗ \(name): ожидалось '\(expected)', получено '\(result)'")
         }
     }
 
@@ -86,6 +120,7 @@ final class IntegrationApp: NSObject, NSApplicationDelegate {
 
     private func scenario(_ name: String, type input: String, expect expected: String) {
         DispatchQueue.main.sync { self.textView.string = "" }
+        engine.handle(.contextLost)
         feed(input)
         usleep(500000) // даём TextReplacer допечатать
         let result = DispatchQueue.main.sync { self.textView.string }
@@ -130,6 +165,59 @@ final class IntegrationApp: NSObject, NSApplicationDelegate {
 
         layoutSync(.ru)
         scenario("английское слово в RU", type: "руддщ ", expect: "hello ")
+
+        print("▶︎ Регрессии P0 и новые функции")
+
+        layoutSync(.en)
+        scenario("Double-Shift исправляет текущее слово", expect: "привет") {
+            feed("ghbdtn")
+            doubleShift()
+        }
+
+        layoutSync(.en)
+        scenario("P0: Double-Shift после клика ничего не трогает", expect: "привет ") {
+            feed("ghbdtn ")
+            usleep(300000)
+            engine.handle(.mouseDown)
+            doubleShift()
+        }
+
+        layoutSync(.en)
+        scenario("P0: Double-Shift после Enter не съедает перевод строки", expect: "qwxz\n") {
+            feed("qwxz")
+            pressEnter()
+            doubleShift()
+        }
+
+        layoutSync(.en)
+        scenario("контекст: однобуквенное слово после русских", expect: "привет в мир ") {
+            for word in ["ghbdtn ", "d ", "vbh "] {
+                feed(word)
+                usleep(150000) // реалистичная пауза между словами
+            }
+        }
+
+        layoutSync(.en)
+        scenario("Caps Lock: GHBDTN → ПРИВЕТ", expect: "ПРИВЕТ ") {
+            feed("GHBDTN ", flags: .maskAlphaShift)
+        }
+
+        layoutSync(.en)
+        DispatchQueue.main.sync { self.preferences.reliableMode = true }
+        scenario("исправление перед Enter (ADR-0008)", expect: "привет\n") {
+            feed("ghbdtn")
+            let held = engine.interceptEnter(flags: [])
+            if !held { print("    (Enter не был придержан)") }
+        }
+        DispatchQueue.main.sync { self.preferences.reliableMode = false }
+
+        layoutSync(.en)
+        DispatchQueue.main.sync { self.preferences.enabled = false }
+        scenario("пауза: Double-Shift не работает", expect: "ghbdtn") {
+            feed("ghbdtn")
+            doubleShift()
+        }
+        DispatchQueue.main.sync { self.preferences.enabled = true }
 
         DispatchQueue.main.async {
             print(self.failures == 0

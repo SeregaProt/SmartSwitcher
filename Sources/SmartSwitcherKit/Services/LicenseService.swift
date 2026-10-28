@@ -43,14 +43,22 @@ public final class LicenseService: ObservableObject {
         }
     }
 
+    /// Плейсхолдер публичного ключа в open-source/dev-сборке.
+    public static let placeholderPublicKeyBase64 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
     /// Публичный ключ издателя (base64). В open-source сборке — плейсхолдер;
     /// в релизе заменяется реальным ключом проекта. Инъектируется для тестов.
-    public static let releasePublicKeyBase64 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    public static let releasePublicKeyBase64 = placeholderPublicKeyBase64
 
     private let keychainAccount = "license"
     private let publicKey: Curve25519.Signing.PublicKey?
 
-    @Published public private(set) var current: License
+    @Published public private(set) var current: License {
+        didSet { onChange?() }
+    }
+
+    /// Изменилось состояние лицензии (главный поток).
+    public var onChange: (() -> Void)?
 
     public init(publicKeyBase64: String = LicenseService.releasePublicKeyBase64) {
         if let data = Data(base64Encoded: publicKeyBase64),
@@ -72,9 +80,12 @@ public final class LicenseService: ObservableObject {
     /// В open-source/dev-сборке (публичный ключ-плейсхолдер) платные функции
     /// разблокированы — иначе их нельзя было бы протестировать без сервера
     /// лицензий. В релизе ключ реальный, и гейтинг работает (раздел 22).
+    ///
+    /// Сравнение — именно с плейсхолдером: раньше ключ сравнивался сам с собой,
+    /// и Pro оставался открытым даже с реальным ключом в релизе.
     public var isDevBuild: Bool {
-        publicKey == nil
-            || (try? Curve25519.Signing.PublicKey(rawRepresentation: Data(base64Encoded: Self.releasePublicKeyBase64) ?? Data()))?.rawRepresentation == publicKey?.rawRepresentation
+        guard let publicKey else { return true }
+        return publicKey.rawRepresentation == Data(base64Encoded: Self.placeholderPublicKeyBase64)
     }
 
     /// Доступны ли платные расширения (синхронизация, доп. возможности).

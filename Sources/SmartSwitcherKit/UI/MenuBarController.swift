@@ -13,6 +13,8 @@ public final class MenuBarController: NSObject {
     private let layoutInfoItem = NSMenuItem()
     private let permissionItem = NSMenuItem()
     private let conflictItem = NSMenuItem()
+    private let updateAvailableItem = NSMenuItem()
+    private var updateURL: URL?
 
     public init(preferences: Preferences, layouts: LayoutController, updates: UpdateService) {
         self.preferences = preferences
@@ -67,6 +69,11 @@ public final class MenuBarController: NSObject {
         conflictItem.isEnabled = false
         conflictItem.isHidden = true
         menu.addItem(conflictItem)
+
+        updateAvailableItem.target = self
+        updateAvailableItem.action = #selector(openUpdate)
+        updateAvailableItem.isHidden = true
+        menu.addItem(updateAvailableItem)
 
         menu.addItem(.separator())
 
@@ -134,6 +141,15 @@ public final class MenuBarController: NSObject {
         conflictItem.isHidden = !visible
     }
 
+    public func showUpdateAvailable(version: String, url: URL) {
+        updateURL = url
+        updateAvailableItem.title = String(
+            format: L10n.text("menu.update.available", "⬆︎ Доступна версия %@ — открыть"),
+            version
+        )
+        updateAvailableItem.isHidden = false
+    }
+
     // MARK: - Actions
 
     @objc private func toggleEnabled() {
@@ -159,7 +175,29 @@ public final class MenuBarController: NSObject {
     }
 
     @objc private func checkUpdates() {
-        updates.checkForUpdates()
+        updates.check { [weak self] result in
+            let alert = NSAlert()
+            switch result {
+            case .upToDate:
+                alert.messageText = L10n.text("settings.updates.uptodate", "У вас последняя версия.")
+            case let .available(version, url):
+                self?.showUpdateAvailable(version: version, url: url)
+                alert.messageText = String(format: L10n.text("settings.updates.available", "Доступна версия %@."), version)
+                alert.addButton(withTitle: L10n.text("settings.updates.open", "Открыть страницу релиза"))
+                alert.addButton(withTitle: L10n.text("common.later", "Позже"))
+                NSApp.activate(ignoringOtherApps: true)
+                if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(url) }
+                return
+            case .failed:
+                alert.messageText = L10n.text("settings.updates.failed", "Не удалось проверить обновления.")
+            }
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        }
+    }
+
+    @objc private func openUpdate() {
+        if let updateURL { NSWorkspace.shared.open(updateURL) }
     }
 
     @objc private func showAbout() {

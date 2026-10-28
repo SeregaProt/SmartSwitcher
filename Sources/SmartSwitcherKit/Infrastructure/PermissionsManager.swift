@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Carbon
 
 /// Проверка и запрос прав Accessibility (онбординг, раздел 4.4 ТЗ).
 public enum PermissionsManager {
@@ -22,12 +23,24 @@ public enum PermissionsManager {
     }
 }
 
-/// Определение фокуса в secure text field (поле пароля) через Accessibility API (FR-5).
+/// Определение ввода пароля (FR-5): системный Secure Event Input (его
+/// включают поля паролей, sudo в терминале, менеджеры паролей) и фокус
+/// в AXSecureTextField.
 public final class FocusInspector {
-    public init() {}
+    /// Таймаут Accessibility-запросов: зависшее приложение не должно
+    /// останавливать движок (по умолчанию система ждёт до 6 секунд).
+    private static let messagingTimeout: Float = 0.15
 
-    public func isSecureFieldFocused() -> Bool {
-        let systemWide = AXUIElementCreateSystemWide()
+    private let systemWide: AXUIElement
+
+    public init() {
+        systemWide = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(systemWide, Self.messagingTimeout)
+    }
+
+    public func isSecureInputActive() -> Bool {
+        if IsSecureEventInputEnabled() { return true }
+
         var focusedRef: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(
             systemWide,
@@ -40,12 +53,10 @@ public final class FocusInspector {
             return false
         }
         let element = unsafeDowncast(focusedRef as AnyObject, to: AXUIElement.self)
+        AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
 
         var subroleRef: CFTypeRef?
         AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleRef)
-        if let subrole = subroleRef as? String, subrole == "AXSecureTextField" {
-            return true
-        }
-        return false
+        return (subroleRef as? String) == "AXSecureTextField"
     }
 }

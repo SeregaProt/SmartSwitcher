@@ -3,15 +3,10 @@ import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Окно настроек (FR-10), SwiftUI с вкладками (раздел 4.3 ТЗ).
+/// Окно настроек (FR-10): боковая навигация по разделам (раздел 4.3 ТЗ).
 public final class SettingsWindowController {
     private var window: NSWindow?
-    private let preferences: Preferences
-    private let diary: DiaryService
-    private let importExport: ImportExportService
-    private let updates: UpdateService
-    private let notifications: NotificationService
-    private let license: LicenseService
+    private let dependencies: SettingsDependencies
 
     public init(
         preferences: Preferences,
@@ -19,31 +14,30 @@ public final class SettingsWindowController {
         importExport: ImportExportService,
         updates: UpdateService,
         notifications: NotificationService,
-        license: LicenseService
+        license: LicenseService,
+        stats: StatisticsService,
+        personal: PersonalDictionary
     ) {
-        self.preferences = preferences
-        self.diary = diary
-        self.importExport = importExport
-        self.updates = updates
-        self.notifications = notifications
-        self.license = license
+        dependencies = SettingsDependencies(
+            preferences: preferences,
+            diary: diary,
+            importExport: importExport,
+            updates: updates,
+            notifications: notifications,
+            license: license,
+            stats: stats,
+            personal: personal
+        )
     }
 
     public func show() {
         if window == nil {
-            let view = SettingsView(
-                preferences: preferences,
-                diary: diary,
-                importExport: importExport,
-                updates: updates,
-                notifications: notifications,
-                license: license
-            )
-            let hosting = NSHostingController(rootView: view)
+            let hosting = NSHostingController(rootView: SettingsView(deps: dependencies))
             let window = NSWindow(contentViewController: hosting)
             window.title = L10n.text("settings.title", "Настройки SmartSwitcher")
-            window.styleMask = [.titled, .closable]
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             window.isReleasedWhenClosed = false
+            window.setContentSize(NSSize(width: 780, height: 540))
             window.center()
             self.window = window
         }
@@ -52,38 +46,109 @@ public final class SettingsWindowController {
     }
 }
 
-struct SettingsView: View {
-    @ObservedObject var preferences: Preferences
+struct SettingsDependencies {
+    let preferences: Preferences
     let diary: DiaryService
     let importExport: ImportExportService
     let updates: UpdateService
     let notifications: NotificationService
-    @ObservedObject var license: LicenseService
+    let license: LicenseService
+    let stats: StatisticsService
+    let personal: PersonalDictionary
+}
+
+private enum SettingsSection: String, CaseIterable, Identifiable {
+    case general, languages, hotkeys, apps, words, expansion, statistics, diary, privacy, updates, account
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: return L10n.text("settings.tab.general", "Общие")
+        case .languages: return L10n.text("settings.tab.languages", "Языки")
+        case .hotkeys: return L10n.text("settings.tab.hotkeys", "Хоткеи")
+        case .apps: return L10n.text("settings.tab.apps", "Приложения")
+        case .words: return L10n.text("settings.tab.words", "Слова")
+        case .expansion: return L10n.text("settings.tab.expansion", "Автозамена")
+        case .statistics: return L10n.text("settings.tab.statistics", "Статистика")
+        case .diary: return L10n.text("settings.tab.diary", "Дневник")
+        case .privacy: return L10n.text("settings.tab.privacy", "Приватность")
+        case .updates: return L10n.text("settings.tab.updates", "Обновления")
+        case .account: return L10n.text("settings.tab.account", "Аккаунт")
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .general: return "gearshape"
+        case .languages: return "globe"
+        case .hotkeys: return "keyboard"
+        case .apps: return "square.grid.2x2"
+        case .words: return "textformat.abc"
+        case .expansion: return "arrow.right.square"
+        case .statistics: return "chart.bar"
+        case .diary: return "book.closed"
+        case .privacy: return "lock.shield"
+        case .updates: return "arrow.down.circle"
+        case .account: return "person.crop.circle"
+        }
+    }
+}
+
+struct SettingsView: View {
+    let deps: SettingsDependencies
+    @State private var section: SettingsSection? = .general
 
     var body: some View {
-        TabView {
-            GeneralSettingsTab(preferences: preferences, importExport: importExport, notifications: notifications)
-                .tabItem { Label(L10n.text("settings.tab.general", "Общие"), systemImage: "gearshape") }
-            LanguagesSettingsTab(preferences: preferences)
-                .tabItem { Label(L10n.text("settings.tab.languages", "Языки"), systemImage: "globe") }
-            HotkeysSettingsTab(preferences: preferences)
-                .tabItem { Label(L10n.text("settings.tab.hotkeys", "Хоткеи"), systemImage: "keyboard") }
-            ExclusionsSettingsTab(preferences: preferences)
-                .tabItem { Label(L10n.text("settings.tab.exclusions", "Исключения"), systemImage: "hand.raised") }
-            WordsSettingsTab(preferences: preferences)
-                .tabItem { Label(L10n.text("settings.tab.words", "Слова"), systemImage: "textformat.abc") }
-            ExpansionSettingsTab(preferences: preferences)
-                .tabItem { Label(L10n.text("settings.tab.expansion", "Автозамена"), systemImage: "arrow.right.square") }
-            DiarySettingsTab(preferences: preferences, diary: diary)
-                .tabItem { Label(L10n.text("settings.tab.diary", "Дневник"), systemImage: "book.closed") }
-            UpdatesSettingsTab(preferences: preferences, updates: updates)
-                .tabItem { Label(L10n.text("settings.tab.updates", "Обновления"), systemImage: "arrow.down.circle") }
-            PrivacySettingsTab(preferences: preferences, diary: diary)
-                .tabItem { Label(L10n.text("settings.tab.privacy", "Приватность"), systemImage: "lock.shield") }
-            AccountSettingsTab(license: license)
-                .tabItem { Label(L10n.text("settings.tab.account", "Аккаунт"), systemImage: "person.crop.circle") }
+        NavigationSplitView {
+            List(SettingsSection.allCases, selection: $section) { item in
+                Label(item.title, systemImage: item.icon).tag(item)
+            }
+            .navigationSplitViewColumnWidth(min: 170, ideal: 190)
+        } detail: {
+            detail(for: section ?? .general)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 580, height: 460)
+        .frame(minWidth: 720, minHeight: 500)
+    }
+
+    @ViewBuilder
+    private func detail(for section: SettingsSection) -> some View {
+        switch section {
+        case .general:
+            GeneralSettingsTab(preferences: deps.preferences, importExport: deps.importExport, notifications: deps.notifications)
+        case .languages:
+            LanguagesSettingsTab(preferences: deps.preferences)
+        case .hotkeys:
+            HotkeysSettingsTab(preferences: deps.preferences)
+        case .apps:
+            AppsSettingsTab(preferences: deps.preferences)
+        case .words:
+            WordsSettingsTab(preferences: deps.preferences)
+        case .expansion:
+            ExpansionSettingsTab(preferences: deps.preferences)
+        case .statistics:
+            StatisticsSettingsTab(stats: deps.stats)
+        case .diary:
+            DiarySettingsTab(preferences: deps.preferences, diary: deps.diary)
+        case .privacy:
+            PrivacySettingsTab(preferences: deps.preferences, diary: deps.diary, stats: deps.stats, personal: deps.personal)
+        case .updates:
+            UpdatesSettingsTab(preferences: deps.preferences, updates: deps.updates)
+        case .account:
+            AccountSettingsTab(license: deps.license)
+        }
+    }
+}
+
+/// Отметка платной функции (раздел 22).
+private struct ProBadge: View {
+    var body: some View {
+        Text("Pro")
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Color.accentColor.opacity(0.2)))
     }
 }
 
@@ -99,37 +164,56 @@ private struct GeneralSettingsTab: View {
 
     var body: some View {
         Form {
-            Toggle(L10n.text("settings.autocorrect", "Автоматически исправлять раскладку"), isOn: $preferences.enabled)
-            Toggle(L10n.text("settings.sound", "Звук при исправлении"), isOn: $preferences.soundEnabled)
-            Toggle(L10n.text("settings.notifications", "Уведомление при переключении"), isOn: $preferences.notificationsEnabled)
-                .onChange(of: preferences.notificationsEnabled) { enabled in
-                    if enabled { notifications.requestAuthorizationIfNeeded() }
-                }
-            Toggle(L10n.text("settings.launch", "Запускать при входе в систему"), isOn: $launchAtLogin)
-                .onChange(of: launchAtLogin) { newValue in
-                    do {
-                        if newValue {
-                            try SMAppService.mainApp.register()
-                        } else {
-                            try SMAppService.mainApp.unregister()
-                        }
-                        loginItemError = nil
-                    } catch {
-                        loginItemError = String(
-                            format: L10n.text("settings.launch.error", "Не удалось изменить автозапуск: %@"),
-                            error.localizedDescription
-                        )
-                        launchAtLogin = SMAppService.mainApp.status == .enabled
+            Section {
+                Toggle(L10n.text("settings.autocorrect", "Автоматически исправлять раскладку"), isOn: $preferences.enabled)
+                Toggle(L10n.text("settings.learn", "Учиться на моём наборе (личный словарь)"), isOn: $preferences.learnFromTyping)
+                Toggle(isOn: $preferences.reliableMode) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.text("settings.reliable", "Надёжный режим"))
+                        Text(L10n.text("settings.reliable.note", "Ввод придерживается на миллисекунды, пока исправляется слово: быстрый набор не смешивается с перенабором, а слово перед Enter тоже исправляется. Использует активный перехват клавиатуры (не дольше 0,5 с)."))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
-            if let loginItemError {
-                Text(loginItemError).font(.caption).foregroundColor(.red)
+            }
+            Section(L10n.text("settings.feedback", "Обратная связь")) {
+                Toggle(L10n.text("settings.hud", "Показывать раскладку у курсора"), isOn: $preferences.hudEnabled)
+                Toggle(L10n.text("settings.sound", "Звук при исправлении"), isOn: $preferences.soundEnabled)
+                Toggle(L10n.text("settings.notifications", "Уведомление при переключении"), isOn: $preferences.notificationsEnabled)
+                    .onChange(of: preferences.notificationsEnabled) { enabled in
+                        if enabled { notifications.requestAuthorizationIfNeeded() }
+                    }
+            }
+            Section {
+                Toggle(L10n.text("settings.launch", "Запускать при входе в систему"), isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { newValue in
+                        do {
+                            if newValue {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                            loginItemError = nil
+                        } catch {
+                            loginItemError = String(
+                                format: L10n.text("settings.launch.error", "Не удалось изменить автозапуск: %@"),
+                                error.localizedDescription
+                            )
+                            launchAtLogin = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+                if let loginItemError {
+                    Text(loginItemError).font(.caption).foregroundColor(.red)
+                }
             }
 
-
             Section(L10n.text("settings.importexport", "Конфигурация")) {
-                Toggle(L10n.text("settings.sync", "Синхронизировать настройки через iCloud"), isOn: $preferences.syncEnabled)
-                Text(L10n.text("settings.sync.note", "Синхронизируются только настройки и правила — никогда набранный текст. Включается в подписанной релизной сборке."))
+                HStack {
+                    Toggle(L10n.text("settings.sync", "Синхронизировать настройки через iCloud"), isOn: $preferences.syncEnabled)
+                        .disabled(!preferences.proUnlocked)
+                    ProBadge()
+                }
+                Text(L10n.text("settings.sync.note", "Синхронизируются только настройки и правила — никогда набранный текст. Списки слов объединяются между устройствами. Работает в подписанной релизной сборке."))
                     .font(.caption)
                     .foregroundColor(.secondary)
                 HStack {
@@ -142,7 +226,6 @@ private struct GeneralSettingsTab: View {
             }
         }
         .formStyle(.grouped)
-        .padding()
     }
 
     private func exportConfig() {
@@ -172,32 +255,57 @@ private struct GeneralSettingsTab: View {
     }
 }
 
-// MARK: - Исключения приложений
+// MARK: - Приложения (режимы)
 
-private struct ExclusionsSettingsTab: View {
+private struct AppsSettingsTab: View {
     @ObservedObject var preferences: Preferences
-    @State private var selectedApp: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L10n.text("settings.excluded.apps", "Приложения, в которых исправление отключено:"))
-                .font(.headline)
-            List(selection: $selectedApp) {
-                ForEach(preferences.excludedApps, id: \.self) { app in
-                    Text(app).tag(app)
+        VStack(alignment: .leading, spacing: 14) {
+            Text(L10n.text("settings.apps.note", "По умолчанию SmartSwitcher исправляет раскладку везде. Для отдельных приложений можно оставить только ручное исправление (Double-Shift, хоткеи выделения) или выключить его полностью."))
+                .font(.callout)
+                .foregroundColor(.secondary)
+            AppListEditor(
+                title: L10n.text("settings.apps.manual", "Только вручную (терминалы, IDE):"),
+                apps: $preferences.manualOnlyApps
+            )
+            AppListEditor(
+                title: L10n.text("settings.apps.off", "Выключено полностью (менеджеры паролей):"),
+                apps: $preferences.excludedApps
+            )
+        }
+        .padding()
+    }
+}
+
+private struct AppListEditor: View {
+    let title: String
+    @Binding var apps: [String]
+    @State private var selected: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.headline)
+            List(selection: $selected) {
+                ForEach(apps, id: \.self) { bundleID in
+                    HStack {
+                        Text(Self.displayName(for: bundleID))
+                        Spacer()
+                        Text(bundleID).font(.caption).foregroundColor(.secondary)
+                    }
+                    .tag(bundleID)
                 }
             }
+            .frame(minHeight: 110)
             HStack {
                 Button(L10n.text("settings.app.add", "Добавить приложение…")) { addApp() }
                 Button(L10n.text("settings.app.remove", "Удалить")) {
-                    if let selectedApp {
-                        preferences.excludedApps.removeAll { $0 == selectedApp }
-                    }
+                    if let selected { apps.removeAll { $0 == selected } }
+                    selected = nil
                 }
-                .disabled(selectedApp == nil)
+                .disabled(selected == nil)
             }
         }
-        .padding()
     }
 
     private func addApp() {
@@ -206,11 +314,16 @@ private struct ExclusionsSettingsTab: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url,
-              let bundle = Bundle(url: url),
-              let bundleID = bundle.bundleIdentifier else { return }
-        if !preferences.excludedApps.contains(bundleID) {
-            preferences.excludedApps.append(bundleID)
+              let bundleID = Bundle(url: url)?.bundleIdentifier else { return }
+        if !apps.contains(bundleID) { apps.append(bundleID) }
+    }
+
+    private static func displayName(for bundleID: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            return bundleID
         }
+        return FileManager.default.displayName(atPath: url.path)
+            .replacingOccurrences(of: ".app", with: "")
     }
 }
 
@@ -279,6 +392,68 @@ private struct WordsSettingsTab: View {
     }
 }
 
+// MARK: - Статистика
+
+private struct StatisticsSettingsTab: View {
+    @ObservedObject var stats: StatisticsService
+
+    var body: some View {
+        let total = stats.total
+        let today = stats.day()
+        let week = stats.lastDays(14)
+        let maxValue = max(1, week.map { $0.day.count(.auto) + $0.day.count(.manual) }.max() ?? 1)
+
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                StatTile(title: L10n.text("stats.today", "Сегодня"), value: today.count(.auto) + today.count(.manual))
+                StatTile(title: L10n.text("stats.auto", "Авто-исправлений"), value: total.count(.auto))
+                StatTile(title: L10n.text("stats.manual", "Вручную"), value: total.count(.manual))
+                StatTile(title: L10n.text("stats.undo", "Откатов"), value: total.count(.undo))
+                StatTile(title: L10n.text("stats.saved", "Сэкономлено нажатий"), value: total.savedKeystrokes)
+            }
+
+            Text(L10n.text("stats.chart", "Исправления за 14 дней"))
+                .font(.headline)
+            HStack(alignment: .bottom, spacing: 6) {
+                ForEach(Array(week.enumerated()), id: \.offset) { _, entry in
+                    let value = entry.day.count(.auto) + entry.day.count(.manual)
+                    VStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.accentColor)
+                            .frame(width: 22, height: max(2, CGFloat(value) / CGFloat(maxValue) * 120))
+                            .help("\(value)")
+                        Text(entry.date, format: .dateTime.day())
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .frame(height: 150, alignment: .bottom)
+
+            Text(L10n.text("stats.privacy", "Хранятся только счётчики по дням (до 90 дней) — ни одного слова."))
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+private struct StatTile: View {
+    let title: String
+    let value: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("\(value)").font(.title2.weight(.semibold)).monospacedDigit()
+            Text(title).font(.caption).foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)))
+    }
+}
+
 // MARK: - Дневник
 
 private struct DiarySettingsTab: View {
@@ -324,7 +499,10 @@ private struct DiarySettingsTab: View {
 private struct PrivacySettingsTab: View {
     @ObservedObject var preferences: Preferences
     let diary: DiaryService
+    let stats: StatisticsService
+    let personal: PersonalDictionary
     @State private var clearedMessage: String?
+    @State private var learnedCount = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -332,17 +510,37 @@ private struct PrivacySettingsTab: View {
                 L10n.text("settings.privacy.title", "Набранный текст никогда не покидает устройство"),
                 systemImage: "checkmark.shield"
             )
-            Text(L10n.text("settings.privacy.body", "SmartSwitcher обрабатывает ввод только в оперативной памяти. Текст не сохраняется на диск (кроме дневника, если вы включили его явно), не отправляется в сеть и не попадает в логи. Поля паролей (secure text fields) игнорируются автоматически."))
+            Text(L10n.text("settings.privacy.body", "SmartSwitcher обрабатывает ввод только в оперативной памяти. Текст не сохраняется на диск (кроме дневника, если вы включили его явно), не отправляется в сеть и не попадает в логи. Поля паролей и режим защищённого ввода игнорируются автоматически."))
                 .font(.callout)
                 .foregroundColor(.secondary)
 
-            Button(L10n.text("settings.privacy.clear", "Очистить локальные данные")) {
+            Text(String(
+                format: L10n.text("settings.privacy.personal", "Личный словарь: %d слов (хранятся только хеши)."),
+                learnedCount
+            ))
+            .font(.callout)
+
+            HStack {
+                Button(L10n.text("settings.privacy.clearPersonal", "Очистить личный словарь")) {
+                    personal.clear()
+                    learnedCount = 0
+                }
+                Button(L10n.text("settings.privacy.clearStats", "Сбросить статистику")) {
+                    stats.reset()
+                }
+            }
+
+            Button(L10n.text("settings.privacy.clear", "Очистить все локальные данные")) {
                 diary.clear()
+                personal.clear()
+                stats.reset()
+                learnedCount = 0
                 preferences.diaryEnabled = false
                 preferences.neverCorrectWords = []
                 preferences.alwaysCorrectWords = []
                 preferences.excludedApps = Preferences.defaultExcludedApps
-                clearedMessage = L10n.text("settings.privacy.cleared", "Локальные данные очищены: дневник удалён, правила и исключения сброшены.")
+                preferences.manualOnlyApps = Preferences.defaultManualOnlyApps
+                clearedMessage = L10n.text("settings.privacy.cleared", "Локальные данные очищены: дневник, личный словарь и статистика удалены, правила сброшены.")
             }
             if let clearedMessage {
                 Text(clearedMessage).font(.caption).foregroundColor(.secondary)
@@ -350,6 +548,7 @@ private struct PrivacySettingsTab: View {
             Spacer()
         }
         .padding()
+        .onAppear { learnedCount = personal.learnedCount }
     }
 }
 
@@ -382,12 +581,11 @@ private struct LanguagesSettingsTab: View {
                         .accessibilityLabel(languageName(layout))
                 }
             }
-            Text(L10n.text("settings.languages.note", "Исправление выполняется только в активные раскладки. Языки интерфейса и языки детекта — независимы. Архитектура готова к добавлению новых раскладок."))
+            Text(L10n.text("settings.languages.note", "Исправление выполняется только в активные раскладки. Поддерживаются любые варианты раскладок macOS: «Русская» и «Русская – ПК», ABC, British, Dvorak, Colemak — таблицы строятся по вашим установленным раскладкам."))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .formStyle(.grouped)
-        .padding()
     }
 
     private func languageName(_ layout: Layout) -> String {
@@ -405,29 +603,43 @@ private struct HotkeysSettingsTab: View {
 
     var body: some View {
         Form {
-            Section {
+            Section(L10n.text("settings.hotkey.shift", "Shift")) {
                 Toggle(L10n.text("settings.hotkey.double", "Double-Shift — исправить последнее слово"), isOn: $preferences.doubleShiftFixEnabled)
                 Toggle(L10n.text("settings.hotkey.undo", "Double-Shift откатывает авто-исправление и запоминает слово"), isOn: $preferences.undoLastEnabled)
                 Toggle(L10n.text("settings.hotkey.single", "Single-Shift — сменить раскладку (экспериментально)"), isOn: $preferences.singleShiftSwitchEnabled)
-            }
-            Section(L10n.text("settings.hotkey.window", "Окно двойного нажатия")) {
                 HStack {
+                    Text(L10n.text("settings.hotkey.window", "Окно двойного нажатия"))
                     Slider(value: $preferences.shiftGestureWindow, in: 0.2...0.6, step: 0.05)
                     Text(String(format: "%.0f мс", preferences.shiftGestureWindow * 1000))
                         .monospacedDigit()
                         .frame(width: 60, alignment: .trailing)
                 }
             }
+            Section(L10n.text("settings.hotkey.backspace.section", "Откат")) {
+                Toggle(isOn: $preferences.backspaceUndoEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.text("settings.hotkey.backspace", "Backspace сразу после исправления отменяет его"))
+                        Text(L10n.text("settings.hotkey.backspace.note", "Удобно, но мешает стереть пробел после слова, чтобы поставить запятую."))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            Section(L10n.text("settings.hotkey.selection", "Выделенный текст")) {
+                Toggle(L10n.text("settings.hotkey.selection.enable", "Горячие клавиши для выделения"), isOn: $preferences.selectionHotkeysEnabled)
+                LabeledContent(L10n.text("settings.hotkey.sel.layout", "Сменить раскладку"), value: "⌃⌥K")
+                LabeledContent(L10n.text("settings.hotkey.sel.case", "Инвертировать регистр"), value: "⌃⌥U")
+                LabeledContent(L10n.text("settings.hotkey.sel.translit", "Транслитерировать"), value: "⌃⌥T")
+            }
             Text(L10n.text("settings.hotkey.note", "Single-Shift удобен, но может срабатывать ложно при обычном наборе заглавных — включайте осознанно."))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .formStyle(.grouped)
-        .padding()
     }
 }
 
-// MARK: - Автозамена (FR-7)
+// MARK: - Автозамена (FR-7, Pro)
 
 private struct ExpansionSettingsTab: View {
     @ObservedObject var preferences: Preferences
@@ -439,7 +651,11 @@ private struct ExpansionSettingsTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Toggle(L10n.text("settings.expansion.enable", "Включить автозамену текста"), isOn: $preferences.textExpansionEnabled)
+            HStack {
+                Toggle(L10n.text("settings.expansion.enable", "Включить автозамену текста"), isOn: $preferences.textExpansionEnabled)
+                ProBadge()
+            }
+            .disabled(!preferences.proUnlocked)
             Text(L10n.text("settings.expansion.note", "Правило «сокращение → текст» применяется на границе слова. Пример: omw → on my way."))
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -508,10 +724,15 @@ private struct AccountSettingsTab: View {
                     if license.isPro, !license.current.email.isEmpty {
                         Text(license.current.email).font(.caption).foregroundColor(.secondary)
                     }
+                    if license.isDevBuild {
+                        Text(L10n.text("account.dev", "Сборка для разработки: функции Pro открыты."))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
 
-            Text(L10n.text("account.about", "Ядро (детект и переключение раскладки) бесплатно и открыто. План Pro добавляет синхронизацию, расширенные функции и приоритетную поддержку."))
+            Text(L10n.text("account.about", "Ядро (детект и переключение раскладки, хоткеи, личный словарь) бесплатно и открыто. План Pro добавляет синхронизацию через iCloud, автозамену текста и приоритетную поддержку."))
                 .font(.callout)
                 .foregroundColor(.secondary)
 
@@ -560,22 +781,56 @@ private struct AccountSettingsTab: View {
 private struct UpdatesSettingsTab: View {
     @ObservedObject var preferences: Preferences
     let updates: UpdateService
+    @State private var status: String?
+    @State private var availableURL: URL?
+    @State private var checking = false
 
     var body: some View {
         Form {
+            LabeledContent(L10n.text("settings.updates.current", "Текущая версия"), value: updates.currentVersion)
             Picker(L10n.text("settings.updates.channel", "Канал обновлений"), selection: $preferences.updateChannel) {
                 Text(L10n.text("settings.updates.stable", "Стабильный")).tag("stable")
                 Text(L10n.text("settings.updates.beta", "Бета")).tag("beta")
             }
-            Toggle(L10n.text("settings.updates.auto", "Проверять обновления автоматически"), isOn: $preferences.autoCheckUpdates)
-            Button(L10n.text("settings.updates.check", "Проверить сейчас")) {
-                updates.checkForUpdates()
+            Toggle(L10n.text("settings.updates.auto", "Проверять обновления автоматически (раз в сутки)"), isOn: $preferences.autoCheckUpdates)
+                .disabled(!updates.isConfigured)
+            HStack {
+                Button(L10n.text("settings.updates.check", "Проверить сейчас")) { check() }
+                    .disabled(checking || !updates.isConfigured)
+                if checking { ProgressView().controlSize(.small) }
+                if let availableURL {
+                    Button(L10n.text("settings.updates.open", "Открыть страницу релиза")) {
+                        NSWorkspace.shared.open(availableURL)
+                    }
+                }
             }
-            Text(L10n.text("settings.updates.note", "Полная авто-установка через Sparkle появится в релизной версии. Сейчас проверка открывает страницу релизов."))
+            if let status {
+                Text(status).font(.caption).foregroundColor(.secondary)
+            }
+            Text(updates.isConfigured
+                ? L10n.text("settings.updates.note", "Новые версии публикуются в GitHub Releases. Автоматическая установка через Sparkle появится в подписанной релизной сборке.")
+                : L10n.text("settings.updates.unconfigured", "Источник обновлений не настроен в этой сборке."))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .formStyle(.grouped)
-        .padding()
+    }
+
+    private func check() {
+        checking = true
+        status = nil
+        availableURL = nil
+        updates.check { result in
+            checking = false
+            switch result {
+            case .upToDate:
+                status = L10n.text("settings.updates.uptodate", "У вас последняя версия.")
+            case let .available(version, url):
+                status = String(format: L10n.text("settings.updates.available", "Доступна версия %@."), version)
+                availableURL = url
+            case .failed:
+                status = L10n.text("settings.updates.failed", "Не удалось проверить обновления.")
+            }
+        }
     }
 }

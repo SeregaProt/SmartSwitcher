@@ -114,6 +114,43 @@ func runPhase2Checks() {
         print("    ложные срабатывания на редких словах: \(String(format: "%.2f%%", fpRate * 100)) (\(falsePositives)/\(enRare.count + ruRare.count))")
         expect(fpRate < 0.02, "ложных срабатываний < 2% на словах вне словаря, фактически \(String(format: "%.2f%%", fpRate * 100))")
 
+        // Честная оценка (docs/DICTIONARIES.md): отложенная выборка — слова,
+        // которых нет ни в словаре, ни в обучении модели.
+        let ruOOV = fixture("eval_ru_oov")
+        let enOOV = fixture("eval_en_oov")
+        expect(ruOOV.count == 3000 && enOOV.count == 3000, "OOV-фикстуры загружены")
+        func oovRecall(_ words: [String], to layout: Layout, context: DetectionContext) -> Double {
+            var hit = 0, all = 0
+            for word in words {
+                let garbage = layout == .ru ? LayoutMapping.toEnglish(word) : LayoutMapping.toRussian(word)
+                guard let garbage else { continue }
+                all += 1
+                if detector.analyze(garbage, context: context) == .correct(layout: layout, replacement: word) { hit += 1 }
+            }
+            return Double(hit) / Double(max(all, 1))
+        }
+        func oovFalsePositives(_ words: [String], context: DetectionContext) -> Double {
+            Double(words.filter { detector.analyze($0, context: context) != .keep }.count) / Double(words.count)
+        }
+        let pct: (Double) -> String = { String(format: "%.1f%%", $0 * 100) }
+        let recallRuOOV = oovRecall(ruOOV, to: .ru, context: .none)
+        let recallEnOOV = oovRecall(enOOV, to: .en, context: .none)
+        let recallRuCtx = oovRecall(ruOOV, to: .ru, context: DetectionContext(previousLanguage: .ru))
+        let recallEnCtx = oovRecall(enOOV, to: .en, context: DetectionContext(previousLanguage: .en))
+        print("    recall вне словаря: RU \(pct(recallRuOOV)), EN \(pct(recallEnOOV)); в контексте фразы: RU \(pct(recallRuCtx)), EN \(pct(recallEnCtx))")
+        expect(recallRuOOV > 0.85, "recall RU вне словаря > 85%, фактически \(pct(recallRuOOV))")
+        expect(recallEnOOV > 0.78, "recall EN вне словаря > 78%, фактически \(pct(recallEnOOV))")
+        expect(recallRuCtx >= recallRuOOV && recallEnCtx >= recallEnOOV, "контекст не ухудшает recall")
+
+        let fpRu = oovFalsePositives(ruOOV, context: .none)
+        let fpEn = oovFalsePositives(enOOV, context: .none)
+        // Худший случай: слово чужого языка посреди фразы на языке кандидата.
+        let fpRuCtx = oovFalsePositives(ruOOV, context: DetectionContext(previousLanguage: .en))
+        let fpEnCtx = oovFalsePositives(enOOV, context: DetectionContext(previousLanguage: .ru))
+        print("    ложные срабатывания вне словаря: RU \(String(format: "%.2f%%", fpRu * 100)), EN \(String(format: "%.2f%%", fpEn * 100)); худший контекст: RU \(String(format: "%.2f%%", fpRuCtx * 100)), EN \(String(format: "%.2f%%", fpEnCtx * 100))")
+        expect(max(fpRu, fpEn) < 0.005, "ложных срабатываний вне словаря < 0.5%")
+        expect(max(fpRuCtx, fpEnCtx) < 0.006, "ложных срабатываний в худшем контексте < 0.6%")
+
         // На частотных (словарных) словах ложных срабатываний быть не должно вовсе.
         var dictFP = 0
         for word in (ruTop.prefix(2000) + enTop.prefix(2000)) {

@@ -28,6 +28,8 @@
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>SSGitHubRepository</key>
+	<string>SeregaProt/SmartSwitcher</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 SmartSwitcher. Open-core, privacy-first.</string>
 	<key>NSPrincipalClass</key>

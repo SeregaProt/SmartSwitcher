@@ -6,10 +6,30 @@ public enum Verdict: Equatable, Sendable {
     case correct(layout: Layout, replacement: String)
 }
 
+/// Контекст набора, известный движку на момент коммита слова.
+public struct DetectionContext: Equatable, Sendable {
+    /// Язык предыдущих слов фразы (nil — контекста нет или он устарел).
+    public var previousLanguage: Layout?
+    /// Включён Caps Lock: ЗАГЛАВНЫЕ — следствие капса, а не аббревиатура.
+    public var capsLock: Bool
+
+    public init(previousLanguage: Layout? = nil, capsLock: Bool = false) {
+        self.previousLanguage = previousLanguage
+        self.capsLock = capsLock
+    }
+
+    public static let none = DetectionContext()
+}
+
 /// «Мозг» приложения — заменяемый компонент (см. архитектуру в ТЗ, раздел 3).
-/// Фаза 1 — эвристика; фаза 2 — n-gram модель за тем же протоколом.
 public protocol LanguageDetector {
-    func analyze(_ token: String) -> Verdict
+    func analyze(_ token: String, context: DetectionContext) -> Verdict
+}
+
+public extension LanguageDetector {
+    func analyze(_ token: String) -> Verdict {
+        analyze(token, context: .none)
+    }
 }
 
 /// Утилиты работы с токеном.

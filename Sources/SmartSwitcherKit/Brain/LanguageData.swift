@@ -1,10 +1,8 @@
-/// Встроенные частотные данные для эвристического детектора (фаза 1).
-/// В фазе 2 заменяются полноценными n-gram моделями и словарями-ресурсами,
-/// загружаемыми лениво из бинарных файлов.
+/// Встроенный мини-словарь: фолбэк DictionaryService на случай, если
+/// ресурсы бандла не загрузились (graceful degradation).
 public enum LanguageData {
     // MARK: - Английский
 
-    public static let englishVowels: Set<Character> = Set("aeiouy")
 
     public static let englishWords: Set<String> = [
         // служебные и сверхчастотные
@@ -57,30 +55,9 @@ public enum LanguageData {
         "json", "http", "https", "git", "github", "xcode", "terminal", "shell", "script", "log",
     ]
 
-    /// Частотные английские биграммы (по корпусным данным, приближённо).
-    public static let englishBigrams: Set<String> = [
-        "th", "he", "in", "er", "an", "re", "on", "at", "en", "nd",
-        "ti", "es", "or", "te", "of", "ed", "is", "it", "al", "ar",
-        "st", "to", "nt", "ng", "se", "ha", "as", "ou", "io", "le",
-        "ve", "co", "me", "de", "hi", "ri", "ro", "ic", "ne", "ea",
-        "ra", "ce", "li", "ch", "ll", "be", "ma", "si", "om", "ur",
-        "ca", "el", "ta", "la", "ns", "di", "fo", "ho", "pe", "ec",
-        "pr", "no", "ct", "us", "ac", "ot", "il", "tr", "ly", "nc",
-        "et", "ut", "ss", "so", "rs", "un", "lo", "wa", "ge", "ie",
-        "wh", "ee", "wi", "em", "ad", "ol", "rt", "po", "we", "na",
-        "ul", "ni", "ts", "mo", "ow", "pa", "im", "mi", "ai", "sh",
-        "ir", "su", "id", "os", "iv", "ia", "am", "fi", "ci", "vi",
-        "pl", "ig", "tu", "ev", "ld", "ry", "mp", "fe", "bl", "ab",
-        "gh", "ty", "op", "wo", "sa", "ay", "ex", "ke", "fr", "oo",
-        "av", "ag", "if", "ap", "gr", "od", "bo", "sp", "rd", "do",
-        "uc", "bu", "ei", "ov", "by", "rm", "ep", "tt", "fa", "go",
-        "mb", "au", "qu", "sw", "ft", "ck", "ny", "ys", "ph", "ue",
-        "ud", "ub", "ms", "ef", "ip", "ix", "ga", "ki", "ja", "ya",
-    ]
 
     // MARK: - Русский
 
-    public static let russianVowels: Set<Character> = Set("аеёиоуыэюя")
 
     public static let russianWords: Set<String> = [
         // сверхчастотные
@@ -113,36 +90,12 @@ public enum LanguageData {
         "квартира", "офис", "школа", "университет", "книга", "музыка", "фильм", "игра", "новости", "погода",
     ]
 
-    /// Частотные русские биграммы (по корпусным данным, приближённо).
-    public static let russianBigrams: Set<String> = [
-        "ст", "ен", "ов", "но", "на", "ни", "то", "ра", "во", "ко",
-        "ет", "ос", "ре", "по", "ли", "не", "ро", "ва", "ть", "ер",
-        "он", "ел", "ла", "ал", "пр", "ан", "ле", "ат", "ка", "от",
-        "ор", "ит", "ог", "ом", "ол", "ес", "ин", "те", "ло", "да",
-        "ны", "го", "ем", "ас", "ис", "од", "ой", "ия", "ие", "ме",
-        "де", "та", "ве", "со", "мо", "ки", "до", "за", "же", "бы",
-        "че", "се", "ми", "ру", "ну", "па", "му", "ри", "ив", "им",
-        "ег", "ак", "ук", "ок", "ек", "ик", "об", "ав", "ев", "ча",
-        "чт", "ши", "жи", "же", "ши", "ит", "ть", "ей", "ий", "ый",
-        "ая", "ою", "ею", "ью", "ущ", "ющ", "ша", "ща", "сь", "ся",
-        "вы", "вс", "ск", "сл", "см", "сп", "тр", "кр", "гр", "бр",
-        "др", "вр", "пе", "пи", "ма", "мы", "ам", "ум", "ы́", "их",
-        "их", "ах", "ух", "ох", "ну", "ба", "бо", "бу", "би", "бе",
-        "ке", "ку", "га", "ге", "гу", "ди", "ду", "дя", "зи", "зо",
-        "ью", "ие", "ью", "яз", "юб", "уж", "уг", "уд", "ул", "ур",
-    ]
 
     // MARK: - Доступ по языку
 
-    public static func vowels(for layout: Layout) -> Set<Character> {
-        layout == .en ? englishVowels : russianVowels
-    }
 
     public static func words(for layout: Layout) -> Set<String> {
         layout == .en ? englishWords : russianWords
     }
 
-    public static func bigrams(for layout: Layout) -> Set<String> {
-        layout == .en ? englishBigrams : russianBigrams
-    }
 }

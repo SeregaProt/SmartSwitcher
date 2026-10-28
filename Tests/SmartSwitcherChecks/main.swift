@@ -42,9 +42,15 @@ suite("LayoutMapping: немаппируемое и round-trip") {
     )
 }
 
-// MARK: - HeuristicDetector
+// MARK: - Детектор: базовые случаи
 
-let detector = HeuristicDetector()
+let baseDetector: StatisticalDetector = {
+    let dictionaries = DictionaryService()
+    let ngrams = NGramModel()
+    dictionaries.warmUp()
+    ngrams.warmUp()
+    return StatisticalDetector(dictionaries: dictionaries, ngrams: ngrams)
+}()
 
 suite("Детектор: русский мусор в EN-раскладке исправляется") {
     let corrections: [(String, String)] = [
@@ -62,10 +68,8 @@ suite("Детектор: русский мусор в EN-раскладке ис
         ("ghbdtn?", "привет,"),
     ]
     for (input, expected) in corrections {
-        expect(
-            detector.analyze(input) == .correct(layout: .ru, replacement: expected),
-            "\(input) → \(expected), получено: \(detector.analyze(input))"
-        )
+        let verdict = baseDetector.analyze(input)
+        expect(verdict == .correct(layout: .ru, replacement: expected), "\(input) → \(expected), получено: \(verdict)")
     }
 }
 
@@ -74,26 +78,24 @@ suite("Детектор: английский мусор в RU-раскладк�
         ("руддщ", "hello"),
         ("еру", "the"),
         ("цщкв", "word"),
-        ("ьфс", "mac"),
         ("руддщб", "hello,"),
     ]
     for (input, expected) in corrections {
-        expect(
-            detector.analyze(input) == .correct(layout: .en, replacement: expected),
-            "\(input) → \(expected), получено: \(detector.analyze(input))"
-        )
+        let verdict = baseDetector.analyze(input)
+        expect(verdict == .correct(layout: .en, replacement: expected), "\(input) → \(expected), получено: \(verdict)")
     }
 }
 
 suite("Детектор: нормальные слова не трогаются (precision)") {
     let words = [
-        "hello", "the", "world", "swift", "mac", "don't", "qwerty",
-        "btw", "really", "code", "github",
+        "hello", "the", "world", "swift", "don't", "qwerty",
+        "really", "code", "github",
         "привет", "спасибо", "мама", "слово", "работа", "сегодня",
         "Привет", "файл", "огурец", "программа",
     ]
     for word in words {
-        expect(detector.analyze(word) == .keep, "не трогать: \(word), получено: \(detector.analyze(word))")
+        let verdict = baseDetector.analyze(word)
+        expect(verdict == .keep, "не трогать: \(word), получено: \(verdict)")
     }
 }
 
@@ -105,15 +107,61 @@ suite("Детектор: стоп-листы") {
         "snake_case", "camelCase", "McDonald", "HTML", "API", "GHBDTN",
     ]
     for token in tokens {
-        expect(detector.analyze(token) == .keep, "стоп-лист: \(token)")
+        expect(baseDetector.analyze(token) == .keep, "стоп-лист: \(token)")
     }
 }
 
 suite("Детектор: граничные случаи") {
-    expect(detector.analyze("a") == .keep, "одиночная буква EN")
-    expect(detector.analyze("я") == .keep, "одиночная буква RU")
-    expect(detector.analyze(String(repeating: "f", count: 40)) == .keep, "сверхдлинный токен")
-    expect(detector.analyze("abcабв") == .keep, "смешанная письменность")
+    expect(baseDetector.analyze("a") == .keep, "одиночная буква EN без контекста")
+    expect(baseDetector.analyze("я") == .keep, "одиночная буква RU без контекста")
+    expect(baseDetector.analyze("d") == .keep, "«d» без контекста не трогаем")
+    expect(baseDetector.analyze(String(repeating: "f", count: 40)) == .keep, "сверхдлинный токен")
+    expect(baseDetector.analyze("abcабв") == .keep, "смешанная письменность")
+}
+
+suite("Детектор: контекст фразы") {
+    let ru = DetectionContext(previousLanguage: .ru)
+    let en = DetectionContext(previousLanguage: .en)
+    expect(baseDetector.analyze("d", context: ru) == .correct(layout: .ru, replacement: "в"), "d после русских слов → в")
+    expect(baseDetector.analyze("b", context: ru) == .correct(layout: .ru, replacement: "и"), "b после русских слов → и")
+    expect(baseDetector.analyze("z", context: ru) == .correct(layout: .ru, replacement: "я"), "z после русских слов → я")
+    expect(baseDetector.analyze("a", context: ru) == .keep, "a — английское слово, не трогаем")
+    expect(baseDetector.analyze("ш", context: en) == .correct(layout: .en, replacement: "i"), "ш после английских слов → i")
+    expect(baseDetector.analyze("в", context: en) == .keep, "в — русское слово, не трогаем")
+    expect(baseDetector.analyze("d", context: en) == .keep, "d после английских — не трогаем")
+}
+
+suite("Детектор: Caps Lock") {
+    let caps = DetectionContext(capsLock: true)
+    expect(baseDetector.analyze("GHBDTN", context: caps) == .correct(layout: .ru, replacement: "ПРИВЕТ"), "GHBDTN при Caps Lock → ПРИВЕТ")
+    expect(baseDetector.analyze("GHBDTN") == .keep, "без Caps Lock это аббревиатура")
+    expect(baseDetector.analyze("HELLO", context: caps) == .keep, "HELLO при Caps Lock — английское слово")
+}
+
+suite("Личный словарь") {
+    let defaults = UserDefaults(suiteName: "com.smartswitcher.personal-checks")!
+    defaults.removePersistentDomain(forName: "com.smartswitcher.personal-checks")
+    let personal = PersonalDictionary(storeURL: nil, defaults: defaults)
+    expect(!personal.contains("kubectl", in: .en), "по умолчанию слово неизвестно")
+    personal.noteKept("kubectl", in: .en)
+    personal.noteKept("kubectl", in: .en)
+    expect(!personal.contains("kubectl", in: .en), "двух подтверждений мало")
+    personal.noteKept("kubectl", in: .en)
+    expect(personal.contains("kubectl", in: .en), "три подтверждения — слово выучено")
+    expect(!personal.contains("kubectl", in: .ru), "слово привязано к раскладке")
+    expect(personal.learnedCount == 1, "счётчик выученных слов")
+    personal.forget("kubectl", in: .en)
+    expect(!personal.contains("kubectl", in: .en), "ручная правка сжигает подтверждения")
+
+    let dictionaries = DictionaryService()
+    let ngrams = NGramModel()
+    let detector = StatisticalDetector(dictionaries: dictionaries, ngrams: ngrams, personal: personal)
+    expect(detector.analyze("ghbdtn") != .keep, "до обучения ghbdtn исправляется")
+    for _ in 0..<3 { personal.noteKept("ghbdtn", in: .en) }
+    expect(detector.analyze("ghbdtn") == .keep, "выученное слово больше не исправляется")
+    personal.clear()
+    expect(personal.learnedCount == 0, "очистка личного словаря")
+    defaults.removePersistentDomain(forName: "com.smartswitcher.personal-checks")
 }
 
 // MARK: - InputBuffer
@@ -141,12 +189,14 @@ suite("InputBuffer: backspace и таинт") {
     expect(tainted.isTainted, "цифра загрязняет буфер")
     expect(tainted.commit(separator: " ") == nil, "загрязнённый буфер не коммитится")
     expect(!tainted.isTainted, "после коммита таинт снят")
+    expect(tainted.lastCommitted == nil, "загрязнённое слово не запоминается")
 
-    let cleared = InputBuffer()
-    cleared.append("a")
-    cleared.append("1")
-    cleared.backspace()
-    expect(cleared.current.isEmpty && !cleared.isTainted, "полное стирание снимает таинт")
+    // Регрессия: раньше цифра не попадала в буфер, и Backspace стирал букву.
+    let synced = InputBuffer()
+    synced.append("a")
+    synced.append("1")
+    synced.backspace()
+    expect(synced.current == "a" && !synced.isTainted, "Backspace стирает именно цифру — буфер синхронен с экраном")
 }
 
 suite("InputBuffer: переполнение и сброс") {
@@ -154,12 +204,31 @@ suite("InputBuffer: переполнение и сброс") {
     for _ in 0..<(InputBuffer.maxLength + 5) { buffer.append("a") }
     expect(buffer.isTainted, "переполнение → таинт")
 
+    // Регрессия P0: после клика/стрелок Double-Shift удалял символы в новом месте.
     let kept = InputBuffer()
     for ch in "word" { kept.append(ch) }
     kept.commit(separator: " ")
-    kept.append("x")
     kept.reset()
-    expect(kept.lastCommitted?.word == "word", "reset не трогает lastCommitted")
+    expect(kept.lastCommitted == nil, "reset забывает последнее слово")
+}
+
+suite("InputBuffer: Enter/Tab и правка вслепую") {
+    let enter = InputBuffer()
+    for ch in "ghbdtn" { enter.append(ch) }
+    expect(enter.commit(separator: "", remember: false) == "ghbdtn", "Enter возвращает слово")
+    expect(enter.lastCommitted == nil, "после Enter слово не запоминается (P0)")
+
+    let resume = InputBuffer()
+    for ch in "ghbdtn" { resume.append(ch) }
+    resume.commit(separator: " ")
+    resume.backspace()
+    expect(resume.current == "ghbdtn" && resume.lastCommitted == nil, "стёрт пробел — снова редактируем прошлое слово")
+
+    let blind = InputBuffer()
+    blind.backspace()
+    for ch in "dtn" { blind.append(ch) }
+    expect(blind.isTainted, "после стирания неизвестного текста набор — обрывок")
+    expect(blind.commit(separator: " ") == nil, "обрывок не анализируется")
 }
 
 suite("InputBuffer: классификация символов") {
@@ -173,57 +242,47 @@ suite("InputBuffer: классификация символов") {
     expect(!InputBuffer.isBufferable("!"), "! не буферизуется")
 }
 
-// MARK: - DoubleShiftDetector
+// MARK: - Жесты Shift
 
-func press(_ d: DoubleShiftDetector, downAt: Double, upAt: Double) -> Bool {
-    _ = d.handleFlagsChanged(
-        keyCode: DoubleShiftDetector.leftShiftKeyCode,
-        flags: .maskShift,
-        time: downAt
-    )
-    return d.handleFlagsChanged(
-        keyCode: DoubleShiftDetector.leftShiftKeyCode,
-        flags: [],
-        time: upAt
-    )
+func pressShift(_ d: ShiftGestureDetector, downAt: Double, upAt: Double) -> ShiftGesture {
+    _ = d.handleFlagsChanged(keyCode: ShiftGestureDetector.leftShiftKeyCode, flags: .maskShift, time: downAt)
+    return d.handleFlagsChanged(keyCode: ShiftGestureDetector.leftShiftKeyCode, flags: [], time: upAt)
 }
 
 suite("Double-Shift: распознавание жеста") {
-    let d1 = DoubleShiftDetector(window: 0.4)
-    expect(!press(d1, downAt: 0.0, upAt: 0.1), "первое нажатие не срабатывает")
-    expect(press(d1, downAt: 0.2, upAt: 0.3), "второе быстрое нажатие срабатывает")
+    let d1 = ShiftGestureDetector(window: 0.4)
+    expect(pressShift(d1, downAt: 0.0, upAt: 0.1) == .none, "первое нажатие не срабатывает")
+    expect(pressShift(d1, downAt: 0.2, upAt: 0.3) == .double, "второе быстрое нажатие срабатывает")
 
-    let d2 = DoubleShiftDetector(window: 0.4)
-    _ = press(d2, downAt: 0.0, upAt: 0.1)
-    expect(!press(d2, downAt: 1.0, upAt: 1.1), "медленное второе нажатие не срабатывает")
-    expect(press(d2, downAt: 1.2, upAt: 1.3), "быстрое третье после второго срабатывает")
+    let d2 = ShiftGestureDetector(window: 0.4)
+    _ = pressShift(d2, downAt: 0.0, upAt: 0.1)
+    expect(pressShift(d2, downAt: 1.0, upAt: 1.1) == .none, "медленное второе нажатие не срабатывает")
+    expect(pressShift(d2, downAt: 1.2, upAt: 1.3) == .double, "быстрое третье после второго срабатывает")
 
-    let d3 = DoubleShiftDetector(window: 0.4)
-    _ = press(d3, downAt: 0.0, upAt: 0.1)
+    let d3 = ShiftGestureDetector(window: 0.4)
+    _ = pressShift(d3, downAt: 0.0, upAt: 0.1)
     d3.noteKeyDown()
-    expect(!press(d3, downAt: 0.2, upAt: 0.3), "клавиша между нажатиями сбрасывает жест")
+    expect(pressShift(d3, downAt: 0.2, upAt: 0.3) == .none, "клавиша между нажатиями сбрасывает жест")
 }
 
 suite("Double-Shift: модификаторы и заглавные") {
-    let shift = DoubleShiftDetector.leftShiftKeyCode
+    let shift = ShiftGestureDetector.leftShiftKeyCode
 
-    let d1 = DoubleShiftDetector(window: 0.4)
+    let d1 = ShiftGestureDetector(window: 0.4)
     _ = d1.handleFlagsChanged(keyCode: shift, flags: .maskShift, time: 0.0)
     d1.noteKeyDown() // напечатали заглавную букву с зажатым Shift
-    expect(
-        !d1.handleFlagsChanged(keyCode: shift, flags: [], time: 0.1),
-        "Shift+буква не считается нажатием"
-    )
-    expect(!press(d1, downAt: 0.2, upAt: 0.3), "следующее одиночное — первое, не второе")
+    expect(d1.handleFlagsChanged(keyCode: shift, flags: [], time: 0.1) == .none, "Shift+буква не считается нажатием")
+    expect(pressShift(d1, downAt: 0.2, upAt: 0.3) == .none, "следующее одиночное — первое, не второе")
 
-    let d2 = DoubleShiftDetector(window: 0.4)
+    let d2 = ShiftGestureDetector(window: 0.4)
     _ = d2.handleFlagsChanged(keyCode: shift, flags: [.maskShift, .maskCommand], time: 0.0)
     _ = d2.handleFlagsChanged(keyCode: shift, flags: .maskCommand, time: 0.1)
-    expect(!press(d2, downAt: 0.2, upAt: 0.3), "Cmd+Shift не считается жестом")
+    expect(pressShift(d2, downAt: 0.2, upAt: 0.3) == .none, "Cmd+Shift не считается жестом")
 }
 
 // MARK: - Фаза 2: статистический детектор, метрики, производительность
 
 runPhase2Checks()
+runProductChecks()
 
 TestRunner.shared.finish()

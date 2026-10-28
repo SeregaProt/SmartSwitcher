@@ -4,6 +4,9 @@ import Foundation
 /// - `neverCorrect` — слова, которые никогда не исправляются (имена, термины,
 ///   команды); сюда же пишет самообучение (FR-6).
 /// - `alwaysCorrect` — слова, которые исправляются всегда, минуя детектор.
+///
+/// Чтение — из потокобезопасного снимка (движок на фоновой очереди),
+/// запись — на главном потоке.
 public final class WordRulesManager {
     private let preferences: Preferences
 
@@ -12,11 +15,11 @@ public final class WordRulesManager {
     }
 
     public func isNeverCorrect(_ word: String) -> Bool {
-        preferences.neverCorrectWords.contains(Self.normalize(word))
+        preferences.engine.neverCorrectWords.contains(Self.normalize(word))
     }
 
     public func isAlwaysCorrect(_ word: String) -> Bool {
-        preferences.alwaysCorrectWords.contains(Self.normalize(word))
+        preferences.engine.alwaysCorrectWords.contains(Self.normalize(word))
     }
 
     public func addNeverCorrect(_ word: String) {

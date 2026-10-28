@@ -85,22 +85,3 @@ public final class ShiftGestureDetector {
         return .single
     }
 }
-
-/// Совместимость с прежним API (тесты фазы 1). Тонкая обёртка над
-/// ShiftGestureDetector, эмитит только double.
-public final class DoubleShiftDetector {
-    public static let leftShiftKeyCode = ShiftGestureDetector.leftShiftKeyCode
-    public static let rightShiftKeyCode = ShiftGestureDetector.rightShiftKeyCode
-
-    private let detector: ShiftGestureDetector
-
-    public init(window: TimeInterval = 0.4) {
-        detector = ShiftGestureDetector(window: window)
-    }
-
-    public func noteKeyDown() { detector.noteKeyDown() }
-
-    public func handleFlagsChanged(keyCode: Int64, flags: CGEventFlags, time: TimeInterval) -> Bool {
-        detector.handleFlagsChanged(keyCode: keyCode, flags: flags, time: time) == .double
-    }
-}

@@ -1,16 +1,18 @@
 import AppKit
 
-/// Белый список приложений (FR-5): в исключённых приложениях
-/// авто-исправление не работает.
+/// Правила приложений (FR-5): авто / только вручную / выключено.
 ///
 /// `NSWorkspace.frontmostApplication` корректно читается только на главном
-/// потоке, а движок спрашивает исключение с потока event tap. Поэтому bundle id
+/// потоке, а движок спрашивает режим с фоновой очереди. Поэтому bundle id
 /// активного приложения кешируется по уведомлению `didActivateApplication`
 /// и читается из кеша потокобезопасно.
-public final class AppExclusionManager {
+public final class AppRulesManager {
     private let preferences: Preferences
     private let lock = NSLock()
     private var cachedFrontmostBundleID: String?
+
+    /// Активировано другое приложение — контекст набора потерян.
+    public var onActivate: (() -> Void)?
 
     public init(preferences: Preferences) {
         self.preferences = preferences
@@ -27,9 +29,9 @@ public final class AppExclusionManager {
         NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
-    public func isFrontmostExcluded() -> Bool {
-        guard let bundleID = frontmostBundleID() else { return false }
-        return isExcluded(bundleID: bundleID)
+    /// Режим для активного приложения. Потокобезопасно.
+    public func frontmostMode() -> AppMode {
+        preferences.engine.mode(forBundleID: frontmostBundleID())
     }
 
     public func frontmostBundleID() -> String? {
@@ -38,17 +40,12 @@ public final class AppExclusionManager {
         return cachedFrontmostBundleID
     }
 
-    public func isExcluded(bundleID: String) -> Bool {
-        preferences.excludedApps.contains { excluded in
-            bundleID == excluded || bundleID.hasPrefix(excluded + ".")
-        }
-    }
-
     @objc private func appActivated(_ notification: Notification) {
         let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
         let bundleID = app?.bundleIdentifier ?? NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         lock.lock()
         cachedFrontmostBundleID = bundleID
         lock.unlock()
+        onActivate?()
     }
 }

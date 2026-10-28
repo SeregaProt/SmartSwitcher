@@ -10,10 +10,18 @@ import Foundation
 /// - текущая раскладка кешируется и обновляется по системному уведомлению,
 ///   так что `current()` безопасен из любого потока;
 /// - `select(_:)` маршалит реальную смену на главный поток.
+///
+/// Для каждого языка запоминается последний использованный input source
+/// («Русская» или «Русская – ПК», ABC или Dvorak…): именно он выбирается при
+/// переключении и по нему строятся таблицы конвертации.
 public final class LayoutController {
-    private var cache: [Layout: TISInputSource] = [:]
+    /// Предпочитаемый источник для языка (только главный поток).
+    private var preferred: [Layout: TISInputSource] = [:]
     private let lock = NSLock()
     private var cachedCurrent: Layout?
+
+    /// Набор предпочитаемых источников изменился (главный поток).
+    public var onSourcesChanged: (() -> Void)?
 
     public init() {
         refreshCurrentCache()
@@ -46,6 +54,16 @@ public final class LayoutController {
                 self?.performSelect(layout)
             }
         }
+    }
+
+    /// Источники для построения таблиц конвертации: предпочитаемый для
+    /// каждого языка или первый включённый. Только главный поток.
+    public func sourcesForConversion() -> [Layout: TISInputSource] {
+        var result: [Layout: TISInputSource] = [:]
+        for layout in Layout.allCases {
+            if let source = inputSource(for: layout) { result[layout] = source }
+        }
+        return result
     }
 
     // MARK: - Private (главный поток)
@@ -81,13 +99,22 @@ public final class LayoutController {
 
     /// Читает текущую раскладку из TIS (главный поток) и кладёт в кеш.
     private func refreshCurrentCache() {
-        let layout: Layout?
+        var layout: Layout?
         if let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() {
             layout = Self.layout(of: source)
-        } else {
-            layout = nil
+            if let layout, !Self.isSame(preferred[layout], source) {
+                preferred[layout] = source
+                onSourcesChanged?()
+            }
         }
         setCachedCurrent(layout)
+    }
+
+    private static func isSame(_ lhs: TISInputSource?, _ rhs: TISInputSource) -> Bool {
+        guard let lhs else { return false }
+        let a: String? = property(lhs, kTISPropertyInputSourceID)
+        let b: String? = property(rhs, kTISPropertyInputSourceID)
+        return a != nil && a == b
     }
 
     static func layout(of source: TISInputSource) -> Layout? {
@@ -101,7 +128,7 @@ public final class LayoutController {
     }
 
     private func inputSource(for layout: Layout) -> TISInputSource? {
-        if let cached = cache[layout] { return cached }
+        if let known = preferred[layout] { return known }
 
         guard let cfList = TISCreateInputSourceList(nil, false)?.takeRetainedValue() else {
             return nil
@@ -121,7 +148,7 @@ public final class LayoutController {
                   Self.layout(of: source) == layout else {
                 continue
             }
-            cache[layout] = source
+            preferred[layout] = source
             return source
         }
         return nil

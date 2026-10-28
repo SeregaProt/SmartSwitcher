@@ -1,59 +1,72 @@
 import Foundation
 
-/// Частотная биграммная модель языка (фаза 2, FR-2).
+/// Символьная языковая модель (FR-2): условные вероятности
+/// P(c | ab) с интерполяцией к P(c | b).
 ///
-/// Хранит log10-вероятности биграмм, включая маркеры границ слова
-/// (`^` — начало, `$` — конец), обученные на частотном корпусе.
-/// Оценка слова — средний log10 P(биграмма) по всем биграммам `^слово$`.
-/// Невиданная биграмма получает штраф `floorLogP` — для типичного «мусора»
-/// чужой раскладки таких биграмм много, и оценка резко падает.
+/// Ресурс `<lang>_ngrams.tsv` содержит P(c|b) для биграмм и P(c|ab) для
+/// триграмм, обученные на частотном корпусе; границы слова — `^^` и `$`.
+/// Оценка слова — средний log10 P по всем позициям `^^слово$`.
+/// Отложенная оценка (docs/DICTIONARIES.md): на словах вне словаря
+/// триграммы ловят ~80% ошибок раскладки против ~50% у биграмм.
 public final class NGramModel {
-    public static let floorLogP = -6.5
+    /// Вес триграммной части в интерполяции.
+    public static let trigramWeight = 0.7
+    /// Штраф за позицию, не встречавшуюся ни в одной n-грамме.
+    public static let floorLogP = -6.0
 
-    private var tables: [Layout: [String: Double]] = [:]
+    private struct Table {
+        var bigrams: [String: Double] = [:]
+        var trigrams: [String: Double] = [:]
+    }
+
+    private var tables: [Layout: Table] = [:]
     private let lock = NSLock()
 
     public init() {}
 
     public func warmUp() {
-        _ = table(for: .en)
-        _ = table(for: .ru)
+        for layout in Layout.allCases { _ = table(for: layout) }
     }
 
-    /// Средняя log10-вероятность биграмм слова (только буквы, lowercased).
-    /// Возвращает nil, если в слове меньше одной биграммы.
+    /// Средний log10 P(символ | контекст) по слову (только буквы, lowercased).
+    /// Возвращает nil для слов короче двух букв.
     public func score(_ word: String, in layout: Layout) -> Double? {
         let letters = word.lowercased().filter { $0.isLetter }
         guard letters.count >= 2 else { return nil }
 
         let model = table(for: layout)
-        let marked = "^" + letters + "$"
-        let chars = Array(marked)
+        let chars = Array("^^" + letters + "$")
         var total = 0.0
-        for i in 0..<(chars.count - 1) {
-            let bigram = String(chars[i...(i + 1)])
-            total += model[bigram] ?? Self.floorLogP
+        for i in 2..<chars.count {
+            let p3 = model.trigrams[String(chars[(i - 2)...i])] ?? 0
+            let p2 = model.bigrams[String(chars[(i - 1)...i])] ?? 0
+            let p = Self.trigramWeight * p3 + (1 - Self.trigramWeight) * p2
+            total += p > 0 ? log10(p) : Self.floorLogP
         }
-        return total / Double(chars.count - 1)
+        return total / Double(chars.count - 2)
     }
 
-    private func table(for layout: Layout) -> [String: Double] {
+    private func table(for layout: Layout) -> Table {
         lock.lock()
         defer { lock.unlock() }
         if let cached = tables[layout] { return cached }
 
-        let resource = layout == .en ? "en_bigrams" : "ru_bigrams"
-        var result: [String: Double] = [:]
-        if let url = Bundle.module.url(forResource: resource, withExtension: "tsv"),
+        var result = Table()
+        if let url = Bundle.module.url(forResource: "\(layout.rawValue)_ngrams", withExtension: "tsv"),
            let content = try? String(contentsOf: url, encoding: .utf8) {
             for line in content.split(separator: "\n") {
                 let parts = line.split(separator: "\t")
-                guard parts.count == 2, let logP = Double(parts[1]) else { continue }
-                result[String(parts[0])] = logP
+                guard parts.count == 2, let p = Double(parts[1]) else { continue }
+                let key = String(parts[0])
+                switch key.count {
+                case 2: result.bigrams[key] = p
+                case 3: result.trigrams[key] = p
+                default: continue
+                }
             }
-            Log.brain.info("Биграммная модель \(layout.rawValue): \(result.count) биграмм")
+            Log.brain.info("Модель \(layout.rawValue): \(result.bigrams.count) биграмм, \(result.trigrams.count) триграмм")
         } else {
-            Log.brain.error("Ресурс биграмм \(layout.rawValue) не найден")
+            Log.brain.error("Ресурс n-грамм \(layout.rawValue) не найден")
         }
         tables[layout] = result
         return result

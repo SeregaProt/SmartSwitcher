@@ -15,8 +15,8 @@ let package = Package(
             resources: [
                 .copy("Resources/ru_words.txt"),
                 .copy("Resources/en_words.txt"),
-                .copy("Resources/ru_bigrams.tsv"),
-                .copy("Resources/en_bigrams.tsv"),
+                .copy("Resources/ru_ngrams.tsv"),
+                .copy("Resources/en_ngrams.tsv"),
                 .process("Resources/ru.lproj"),
                 .process("Resources/en.lproj"),
             ],
