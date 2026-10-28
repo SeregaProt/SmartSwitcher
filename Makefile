@@ -1,12 +1,19 @@
 APP_NAME = SmartSwitcher
 DIST = dist/$(APP_NAME).app
 
-.PHONY: build test bundle bundle-universal run clean
+# Command Line Tools с SDK macOS 27 не содержат плагин SwiftUIMacros
+# (`@State` стал макросом) — собираем полным Xcode, если он установлен.
+XCODE_DEVELOPER_DIR = /Applications/Xcode.app/Contents/Developer
+ifneq ($(wildcard $(XCODE_DEVELOPER_DIR)),)
+export DEVELOPER_DIR ?= $(XCODE_DEVELOPER_DIR)
+endif
+
+.PHONY: build test integration test-all bundle bundle-universal assemble run icon clean
 
 build:
 	swift build -c release
 
-# Собственный раннер: Command Line Tools не содержат XCTest/Testing.
+# Собственный раннер (ADR-0003): работает и с CLT, и с Xcode.
 test:
 	swift run SmartSwitcherChecks
 
