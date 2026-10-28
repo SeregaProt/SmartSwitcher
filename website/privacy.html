@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Приватность — SmartSwitcher</title>
+<meta name="description" content="Как SmartSwitcher защищает ваши данные: обработка только в памяти, ноль сетевой передачи набранного текста, игнорирование паролей.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero compact">
+  <nav>
+    <a class="logo" href="index.html">⌨ SmartSwitcher</a>
+    <div class="nav-links">
+      <a href="index.html#features">Возможности</a>
+      <a href="https://github.com/smartswitcher/smartswitcher">GitHub</a>
+    </div>
+  </nav>
+  <div class="hero-content">
+    <h1>Приватность — это не опция, а архитектура</h1>
+    <p class="lead">SmartSwitcher спроектирован по принципу privacy-by-design. Вот что это значит на практике.</p>
+  </div>
+</header>
+
+<section class="prose">
+  <h2>Что мы НЕ делаем</h2>
+  <ul class="promises">
+    <li><strong>Не отправляем набранный текст в сеть.</strong> Никогда. Ни в каком виде, даже анонимно.</li>
+    <li><strong>Не сохраняем текст на диск</strong> по умолчанию. Обработка идёт только в оперативной памяти.</li>
+    <li><strong>Не пишем текст в логи.</strong> В журнале — только факты решений (длины, раскладка), без содержимого.</li>
+    <li><strong>Не трогаем поля паролей.</strong> Secure text fields определяются автоматически и игнорируются.</li>
+    <li><strong>Не используем телеметрию</strong> и трекеры.</li>
+  </ul>
+
+  <h2>Сетевая активность</h2>
+  <p>Приложение обращается к сети только для прозрачных и необязательных вещей:</p>
+  <ul>
+    <li>проверка обновлений (по вашему действию или настройке);</li>
+    <li>синхронизация <em>настроек</em> через iCloud — если вы её включили (только настройки и правила, никогда текст);</li>
+    <li>активация лицензии и добровольная обратная связь.</li>
+  </ul>
+  <p>Все основные функции работают полностью офлайн.</p>
+
+  <h2>Дневник исправлений</h2>
+  <p>Опциональный дневник <strong>выключен по умолчанию</strong>. При включении он хранится только локально, в зашифрованном виде (AES-GCM, ключ в Keychain), и очищается одной кнопкой. Это ваш осознанный выбор для отладки — не настройка по умолчанию.</p>
+
+  <h2>Открытый код</h2>
+  <p>Ядро SmartSwitcher открыто под лицензией MIT. Любой может проверить, что приложение делает именно то, что обещает: <a href="https://github.com/smartswitcher/smartswitcher">github.com/smartswitcher</a>.</p>
+</section>
+
+<footer>
+  <p>© 2026 SmartSwitcher · <a href="index.html">На главную</a> · <a href="mailto:support@smartswitcher.app">support@smartswitcher.app</a></p>
+</footer>
+</body>
+</html>

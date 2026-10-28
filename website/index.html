@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartSwitcher — умное переключение раскладки для macOS</title>
+<meta name="description" content="Нативный аналог Punto Switcher для macOS. Автоматически исправляет текст в неверной раскладке. Приватность: набранный текст никогда не покидает устройство.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <nav>
+    <span class="logo">⌨ SmartSwitcher</span>
+    <div class="nav-links">
+      <a href="#features">Возможности</a>
+      <a href="privacy.html">Приватность</a>
+      <a href="https://github.com/smartswitcher/smartswitcher">GitHub</a>
+    </div>
+  </nav>
+  <div class="hero-content">
+    <h1>Печатайте, не глядя на раскладку</h1>
+    <p class="lead">SmartSwitcher замечает текст, набранный в неверной раскладке, и мгновенно исправляет его — <code>ghbdtn</code> → <code>привет</code>. Нативно для Apple Silicon. Бесплатное ядро с открытым кодом.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/smartswitcher/smartswitcher/releases">Скачать для macOS</a>
+      <a class="btn ghost" href="privacy.html">Почему это приватно →</a>
+    </div>
+    <p class="sub">macOS 13+ · Apple Silicon и Intel · без телеметрии</p>
+  </div>
+</header>
+
+<section id="features" class="features">
+  <h2>Что умеет</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🎯 Точный детектор</h3>
+      <p>Статистическая модель (словари + биграммы) с приоритетом точности: имена, команды, URL и пароли не трогаются. Precision &gt; 98%.</p>
+    </div>
+    <div class="card">
+      <h3>🔒 Честная приватность</h3>
+      <p>Набранный текст обрабатывается только в памяти. Ноль сетевой передачи. Поля паролей игнорируются автоматически.</p>
+    </div>
+    <div class="card">
+      <h3>⚡ Нативно и быстро</h3>
+      <p>Swift, Apple Silicon. Анализ слова — 0,01 мс. Не вносит задержки в ввод, near-zero CPU в простое.</p>
+    </div>
+    <div class="card">
+      <h3>⇧⇧ Ручной контроль</h3>
+      <p>Двойной Shift исправляет и откатывает. Откат запоминается — слово больше не трогается. Исключения по приложениям и словам.</p>
+    </div>
+    <div class="card">
+      <h3>🌐 RU / EN и далее</h3>
+      <p>Русская и английская раскладки на старте, архитектура готова к новым языкам. Интерфейс на русском и английском.</p>
+    </div>
+    <div class="card">
+      <h3>🧩 Open-core</h3>
+      <p>Ядро открыто под MIT. План Pro добавляет синхронизацию настроек через iCloud и расширенные возможности.</p>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>Как это выглядит</h2>
+  <div class="demo-box">
+    <div class="line"><span class="typed">ghbdtn</span> <span class="arrow">→</span> <span class="fixed">привет</span></div>
+    <div class="line"><span class="typed">heccrbq</span> <span class="arrow">→</span> <span class="fixed">русский</span></div>
+    <div class="line"><span class="typed">руддщ</span> <span class="arrow">→</span> <span class="fixed">hello</span></div>
+  </div>
+  <p class="muted">Раскладка переключается на уровне системы — продолжайте печатать как обычно.</p>
+</section>
+
+<footer>
+  <p>© 2026 SmartSwitcher · <a href="privacy.html">Приватность</a> · <a href="https://github.com/smartswitcher/smartswitcher">Исходный код</a> · <a href="mailto:support@smartswitcher.app">support@smartswitcher.app</a></p>
+</footer>
+</body>
+</html>

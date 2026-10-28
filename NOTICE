@@ -1,0 +1,14 @@
+SmartSwitcher — учёт сторонних компонентов (ТЗ, раздел 25)
+
+1. Частотные словари и биграммные модели (Sources/SmartSwitcherKit/Resources/
+   {ru,en}_words.txt, {ru,en}_bigrams.tsv, Tests/SmartSwitcherChecks/Fixtures/)
+   построены из частотных списков проекта FrequencyWords:
+   https://github.com/hermitdave/FrequencyWords
+   Автор: Hermit Dave. Лицензия: CC-BY-SA 4.0.
+   Исходный корпус: OpenSubtitles 2018 (opensubtitles.org).
+   Списки преобразованы скриптом Tools/generate_language_data.py
+   (фильтрация по алфавиту, top-N, расчёт log10-вероятностей биграмм).
+
+2. Прочие зависимости отсутствуют: приложение использует только системные
+   фреймворки macOS (AppKit, SwiftUI, Carbon/HIToolbox, CoreGraphics,
+   CryptoKit, Security, ServiceManagement, os.log).

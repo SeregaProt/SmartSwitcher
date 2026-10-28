@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Глобальный перехват клавиш требует выхода из sandbox; распространение
+	     вне App Store с Developer ID + нотаризацией (Приложение A ТЗ). -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+
+	<!-- Hardened runtime: разрешения, нужные для перехвата/инъекции ввода. -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<false/>
+
+	<!-- iCloud key-value синхронизация настроек (раздел 15). Идентификатор
+	     активируется при подписи Developer ID с провижнингом. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)com.smartswitcher.app</string>
+</dict>
+</plist>

@@ -1,0 +1,134 @@
+/* Menu bar */
+"menu.pause" = "Пауза";
+"menu.enable" = "Включить";
+"menu.pause10" = "Приостановить на 10 минут";
+"menu.layout" = "Раскладка: %@";
+"menu.layout.unknown" = "не определена";
+"menu.permission" = "⚠️ Нет доступа Universal Access — открыть настройки";
+"menu.conflict" = "⚠️ Обнаружена другая утилита перехвата клавиатуры";
+"menu.settings" = "Настройки…";
+"menu.about" = "О программе SmartSwitcher";
+"menu.updates" = "Проверить обновления…";
+"menu.quit" = "Выход";
+
+/* Onboarding */
+"onboarding.title" = "SmartSwitcher нужен доступ к управлению компьютером";
+"onboarding.body" = "Чтобы автоматически исправлять раскладку, приложению требуется разрешение «Universal Access» (Accessibility).\n\n1. Откройте Системные настройки → Конфиденциальность и безопасность → Universal Access.\n2. Включите SmartSwitcher в списке.\n\nНабранный текст обрабатывается только на этом Mac и никуда не отправляется.";
+"onboarding.open" = "Открыть настройки";
+"onboarding.later" = "Позже";
+
+/* Settings */
+"settings.title" = "Настройки SmartSwitcher";
+"settings.tab.general" = "Общие";
+"settings.tab.exclusions" = "Исключения";
+"settings.tab.words" = "Слова";
+"settings.tab.diary" = "Дневник";
+"settings.tab.privacy" = "Приватность";
+"settings.autocorrect" = "Автоматически исправлять раскладку";
+"settings.sound" = "Звук при исправлении";
+"settings.launch" = "Запускать при входе в систему";
+"settings.launch.error" = "Не удалось изменить автозапуск: %@";
+"settings.hotkeys" = "Хоткеи";
+"settings.hotkey.fix" = "Исправить последнее слово";
+"settings.hotkey.fix.value" = "Shift Shift (двойное нажатие)";
+"settings.importexport" = "Конфигурация";
+"settings.export" = "Экспортировать…";
+"settings.import" = "Импортировать…";
+"settings.excluded.apps" = "Приложения, в которых исправление отключено:";
+"settings.app.add" = "Добавить приложение…";
+"settings.app.remove" = "Удалить";
+"settings.words.never" = "Никогда не исправлять (сюда же пишет самообучение):";
+"settings.words.always" = "Всегда исправлять:";
+"settings.words.add" = "Добавить";
+"settings.words.remove" = "Удалить слово";
+"settings.words.placeholder" = "слово";
+"settings.diary.enable" = "Вести дневник исправлений";
+"settings.diary.warning" = "Дневник хранит исправленные слова на диске (в зашифрованном виде, ключ — в Keychain). Включайте, только если готовы к локальному хранению этой истории. В сеть данные не передаются.";
+"settings.diary.clear" = "Очистить дневник";
+"settings.diary.empty" = "Дневник пуст";
+"settings.privacy.title" = "Набранный текст никогда не покидает устройство";
+"settings.privacy.body" = "SmartSwitcher обрабатывает ввод только в оперативной памяти. Текст не сохраняется на диск (кроме дневника, если вы включили его явно), не отправляется в сеть и не попадает в логи. Поля паролей (secure text fields) игнорируются автоматически.";
+"settings.privacy.clear" = "Очистить локальные данные";
+"settings.privacy.cleared" = "Локальные данные очищены: дневник удалён, правила и исключения сброшены.";
+
+/* Import/Export */
+"import.error.format" = "Файл не является конфигурацией SmartSwitcher.";
+"import.error.version" = "Неподдерживаемая версия конфигурации.";
+"export.done" = "Конфигурация экспортирована.";
+"import.done" = "Конфигурация импортирована.";
+
+/* Онбординг-мастер (4.4) */
+"onb.back" = "Назад";
+"onb.next" = "Далее";
+"onb.start" = "Начать работу";
+"onb.welcome.title" = "Добро пожаловать в SmartSwitcher";
+"onb.welcome.body" = "SmartSwitcher автоматически исправляет текст, набранный в неверной раскладке: ghbdtn → привет. Работает незаметно, по завершении слова.";
+"onb.welcome.privacy" = "Набранный текст обрабатывается только на этом Mac и никогда не отправляется в сеть.";
+"onb.perm.title" = "Шаг 1. Доступ к управлению компьютером";
+"onb.perm.body" = "Чтобы видеть нажатия клавиш и исправлять раскладку, нужно разрешение «Универсальный доступ» (Accessibility).";
+"onb.perm.s1" = "Нажмите «Открыть настройки».";
+"onb.perm.s2" = "Конфиденциальность и безопасность → Универсальный доступ.";
+"onb.perm.s3" = "Включите SmartSwitcher в списке.";
+"onb.perm.granted" = "Доступ выдан";
+"onb.perm.waiting" = "Ожидание доступа…";
+"onb.lang.title" = "Шаг 2. Языки";
+"onb.lang.body" = "Выберите раскладки, между которыми SmartSwitcher будет исправлять. По умолчанию — русская и английская.";
+"onb.keys.title" = "Шаг 3. Хоткеи";
+"onb.keys.double" = "Двойной Shift — исправить раскладку последнего слова вручную и откатить авто-исправление.";
+"onb.keys.space" = "Пробел/знаки — момент, когда SmartSwitcher проверяет слово и при необходимости исправляет.";
+"onb.keys.enter" = "После Enter авто-исправление не срабатывает (чтобы не править отправленное) — используйте двойной Shift.";
+"onb.keys.tip" = "Все хоткеи настраиваются в Настройках → Хоткеи.";
+
+/* Аккаунт / Лицензия (22) */
+"settings.tab.account" = "Аккаунт";
+"account.pro" = "План Pro активен";
+"account.free" = "Бесплатный план";
+"account.about" = "Ядро (детект и переключение раскладки) бесплатно и открыто. План Pro добавляет синхронизацию, расширенные функции и приоритетную поддержку.";
+"account.enter" = "Введите лицензионный ключ:";
+"account.key" = "Лицензионный ключ";
+"account.activate" = "Активировать";
+"account.restore" = "Восстановить покупки";
+"account.deactivate" = "Деактивировать на этом Mac";
+"account.activated" = "Лицензия активирована. Спасибо!";
+"license.error.malformed" = "Некорректный ключ.";
+"license.error.signature" = "Подпись ключа недействительна.";
+"license.error.expired" = "Срок действия ключа истёк.";
+
+/* Синхронизация (15) */
+"settings.sync" = "Синхронизировать настройки через iCloud";
+"settings.sync.note" = "Синхронизируются только настройки и правила — никогда набранный текст. Включается в подписанной релизной сборке.";
+
+/* Уведомления (FR-8) */
+"settings.notifications" = "Уведомление при переключении";
+"notify.switched" = "Раскладка переключена на %@";
+
+/* Языки */
+"settings.tab.languages" = "Языки";
+"settings.languages.active" = "Активные раскладки детекта";
+"settings.languages.note" = "Исправление выполняется только в активные раскладки. Языки интерфейса и языки детекта — независимы. Архитектура готова к добавлению новых раскладок.";
+"language.ru" = "Русский (RU)";
+"language.en" = "English (EN)";
+
+/* Хоткеи */
+"settings.tab.hotkeys" = "Хоткеи";
+"settings.hotkey.double" = "Double-Shift — исправить последнее слово";
+"settings.hotkey.undo" = "Double-Shift откатывает авто-исправление и запоминает слово";
+"settings.hotkey.single" = "Single-Shift — сменить раскладку (экспериментально)";
+"settings.hotkey.window" = "Окно двойного нажатия";
+"settings.hotkey.note" = "Single-Shift удобен, но может срабатывать ложно при обычном наборе заглавных — включайте осознанно.";
+
+/* Автозамена */
+"settings.tab.expansion" = "Автозамена";
+"settings.expansion.enable" = "Включить автозамену текста";
+"settings.expansion.note" = "Правило «сокращение → текст» применяется на границе слова. Пример: omw → on my way.";
+"settings.expansion.shortcut" = "Сокращение";
+"settings.expansion.text" = "Замена";
+
+/* Обновления */
+"settings.tab.updates" = "Обновления";
+"settings.updates.channel" = "Канал обновлений";
+"settings.updates.stable" = "Стабильный";
+"settings.updates.beta" = "Бета";
+"settings.updates.auto" = "Проверять обновления автоматически";
+"settings.updates.check" = "Проверить сейчас";
+"settings.updates.note" = "Полная авто-установка через Sparkle появится в релизной версии. Сейчас проверка открывает страницу релизов.";

@@ -1,0 +1,134 @@
+/* Menu bar */
+"menu.pause" = "Pause";
+"menu.enable" = "Enable";
+"menu.pause10" = "Pause for 10 minutes";
+"menu.layout" = "Layout: %@";
+"menu.layout.unknown" = "unknown";
+"menu.permission" = "⚠️ No Accessibility access — open settings";
+"menu.conflict" = "⚠️ Another keyboard interception utility detected";
+"menu.settings" = "Settings…";
+"menu.about" = "About SmartSwitcher";
+"menu.updates" = "Check for Updates…";
+"menu.quit" = "Quit";
+
+/* Onboarding */
+"onboarding.title" = "SmartSwitcher needs permission to control your computer";
+"onboarding.body" = "To fix keyboard layout automatically, the app needs the Accessibility permission.\n\n1. Open System Settings → Privacy & Security → Accessibility.\n2. Enable SmartSwitcher in the list.\n\nYour keystrokes are processed only on this Mac and never leave it.";
+"onboarding.open" = "Open Settings";
+"onboarding.later" = "Later";
+
+/* Settings */
+"settings.title" = "SmartSwitcher Settings";
+"settings.tab.general" = "General";
+"settings.tab.exclusions" = "Exclusions";
+"settings.tab.words" = "Words";
+"settings.tab.diary" = "Diary";
+"settings.tab.privacy" = "Privacy";
+"settings.autocorrect" = "Fix keyboard layout automatically";
+"settings.sound" = "Play sound on correction";
+"settings.launch" = "Launch at login";
+"settings.launch.error" = "Failed to change login item: %@";
+"settings.hotkeys" = "Hotkeys";
+"settings.hotkey.fix" = "Fix last word";
+"settings.hotkey.fix.value" = "Shift Shift (double tap)";
+"settings.importexport" = "Configuration";
+"settings.export" = "Export…";
+"settings.import" = "Import…";
+"settings.excluded.apps" = "Apps where correction is disabled:";
+"settings.app.add" = "Add Application…";
+"settings.app.remove" = "Remove";
+"settings.words.never" = "Never correct (self-learning writes here too):";
+"settings.words.always" = "Always correct:";
+"settings.words.add" = "Add";
+"settings.words.remove" = "Remove word";
+"settings.words.placeholder" = "word";
+"settings.diary.enable" = "Keep a correction diary";
+"settings.diary.warning" = "The diary stores corrected words on disk (encrypted, key in Keychain). Enable only if you are comfortable with keeping this history locally. Nothing is sent over the network.";
+"settings.diary.clear" = "Clear Diary";
+"settings.diary.empty" = "Diary is empty";
+"settings.privacy.title" = "Your keystrokes never leave this device";
+"settings.privacy.body" = "SmartSwitcher processes input in memory only. Text is not written to disk (except the diary, if you explicitly enabled it), not sent over the network, and never logged. Password fields (secure text fields) are ignored automatically.";
+"settings.privacy.clear" = "Clear Local Data";
+"settings.privacy.cleared" = "Local data cleared: diary removed, rules and exclusions reset.";
+
+/* Import/Export */
+"import.error.format" = "The file is not a SmartSwitcher configuration.";
+"import.error.version" = "Unsupported configuration version.";
+"export.done" = "Configuration exported.";
+"import.done" = "Configuration imported.";
+
+/* Onboarding wizard (4.4) */
+"onb.back" = "Back";
+"onb.next" = "Next";
+"onb.start" = "Get Started";
+"onb.welcome.title" = "Welcome to SmartSwitcher";
+"onb.welcome.body" = "SmartSwitcher automatically fixes text typed in the wrong layout: ghbdtn → привет. It works invisibly, at word boundaries.";
+"onb.welcome.privacy" = "Your keystrokes are processed only on this Mac and never sent over the network.";
+"onb.perm.title" = "Step 1. Permission to control your computer";
+"onb.perm.body" = "To see keystrokes and fix the layout, the Accessibility permission is required.";
+"onb.perm.s1" = "Click “Open Settings”.";
+"onb.perm.s2" = "Privacy & Security → Accessibility.";
+"onb.perm.s3" = "Enable SmartSwitcher in the list.";
+"onb.perm.granted" = "Access granted";
+"onb.perm.waiting" = "Waiting for access…";
+"onb.lang.title" = "Step 2. Languages";
+"onb.lang.body" = "Choose the layouts SmartSwitcher will correct between. Russian and English by default.";
+"onb.keys.title" = "Step 3. Hotkeys";
+"onb.keys.double" = "Double Shift — manually fix the last word's layout and undo an auto-correction.";
+"onb.keys.space" = "Space/punctuation — the moment SmartSwitcher checks a word and corrects it if needed.";
+"onb.keys.enter" = "After Enter, auto-correction does not fire (so it won't edit sent text) — use Double Shift.";
+"onb.keys.tip" = "All hotkeys are configurable in Settings → Hotkeys.";
+
+/* Account / License (22) */
+"settings.tab.account" = "Account";
+"account.pro" = "Pro plan active";
+"account.free" = "Free plan";
+"account.about" = "The core (detection and layout switching) is free and open. The Pro plan adds sync, advanced features, and priority support.";
+"account.enter" = "Enter your license key:";
+"account.key" = "License key";
+"account.activate" = "Activate";
+"account.restore" = "Restore Purchases";
+"account.deactivate" = "Deactivate on this Mac";
+"account.activated" = "License activated. Thank you!";
+"license.error.malformed" = "Invalid key.";
+"license.error.signature" = "License signature is invalid.";
+"license.error.expired" = "License has expired.";
+
+/* Sync (15) */
+"settings.sync" = "Sync settings via iCloud";
+"settings.sync.note" = "Only settings and rules are synced — never typed text. Enabled in a signed release build.";
+
+/* Notifications (FR-8) */
+"settings.notifications" = "Notify when switching";
+"notify.switched" = "Layout switched to %@";
+
+/* Languages */
+"settings.tab.languages" = "Languages";
+"settings.languages.active" = "Active detection layouts";
+"settings.languages.note" = "Correction is applied only to active layouts. Interface languages and detection languages are independent. The architecture is ready for new layouts.";
+"language.ru" = "Russian (RU)";
+"language.en" = "English (EN)";
+
+/* Hotkeys */
+"settings.tab.hotkeys" = "Hotkeys";
+"settings.hotkey.double" = "Double-Shift — fix last word";
+"settings.hotkey.undo" = "Double-Shift undoes auto-correction and remembers the word";
+"settings.hotkey.single" = "Single-Shift — switch layout (experimental)";
+"settings.hotkey.window" = "Double-tap window";
+"settings.hotkey.note" = "Single-Shift is handy but may misfire during normal capitalization — enable deliberately.";
+
+/* Text expansion */
+"settings.tab.expansion" = "Expansion";
+"settings.expansion.enable" = "Enable text expansion";
+"settings.expansion.note" = "A “shortcut → text” rule is applied at word boundary. Example: omw → on my way.";
+"settings.expansion.shortcut" = "Shortcut";
+"settings.expansion.text" = "Replacement";
+
+/* Updates */
+"settings.tab.updates" = "Updates";
+"settings.updates.channel" = "Update channel";
+"settings.updates.stable" = "Stable";
+"settings.updates.beta" = "Beta";
+"settings.updates.auto" = "Check for updates automatically";
+"settings.updates.check" = "Check Now";
+"settings.updates.note" = "Full auto-update via Sparkle will arrive in the release version. For now, checking opens the releases page.";
