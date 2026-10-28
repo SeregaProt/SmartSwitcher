@@ -1,6 +1,7 @@
 import AppKit
 
 /// Иконка и меню в строке меню (FR-9).
+@MainActor
 public final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let preferences: Preferences

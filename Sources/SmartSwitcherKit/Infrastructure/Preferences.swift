@@ -33,6 +33,7 @@ public struct EngineSettings: Sendable {
     public var backspaceUndoEnabled = false
     public var reliableMode = false
     public var proUnlocked = true
+    public var diaryEnabled = false
 
     public init() {}
 
@@ -61,7 +62,11 @@ public struct EngineSettings: Sendable {
 
 /// Настройки приложения поверх UserDefaults (раздел 3.2 ТЗ, Infrastructure).
 /// Свойства меняются только на главном потоке; фоновый код читает `engine`.
-public final class Preferences: ObservableObject {
+///
+/// `@unchecked Sendable`: `@Published`-свойства меняются только на главном
+/// потоке (UI, `DispatchQueue.main`), с других потоков читается лишь `engine`,
+/// защищённый `snapshotLock`.
+public final class Preferences: ObservableObject, @unchecked Sendable {
     private enum Key {
         static let enabled = "enabled"
         static let soundEnabled = "soundEnabled"
@@ -179,7 +184,7 @@ public final class Preferences: ObservableObject {
 
     /// Дневник исправлений (FR-11): выключен по умолчанию.
     @Published public var diaryEnabled: Bool {
-        didSet { defaults.set(diaryEnabled, forKey: Key.diaryEnabled) }
+        didSet { defaults.set(diaryEnabled, forKey: Key.diaryEnabled); publish() }
     }
 
     /// Ненавязчивые уведомления при исправлении (FR-8): выключены по умолчанию.
@@ -396,6 +401,7 @@ public final class Preferences: ObservableObject {
         s.backspaceUndoEnabled = backspaceUndoEnabled
         s.reliableMode = reliableMode
         s.proUnlocked = proUnlocked
+        s.diaryEnabled = diaryEnabled
         snapshotLock.lock()
         snapshot = s
         snapshotLock.unlock()

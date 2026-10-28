@@ -47,9 +47,9 @@
 "settings.diary.clear" = "Clear Diary";
 "settings.diary.empty" = "Diary is empty";
 "settings.privacy.title" = "Your keystrokes never leave this device";
-"settings.privacy.body" = "SmartSwitcher processes input in memory only. Text is not written to disk (except the diary, if you explicitly enabled it), not sent over the network, and never logged. Password fields (secure text fields) are ignored automatically.";
-"settings.privacy.clear" = "Clear Local Data";
-"settings.privacy.cleared" = "Local data cleared: diary removed, rules and exclusions reset.";
+"settings.privacy.body" = "SmartSwitcher processes input only in memory. Text is not written to disk (except the diary, if you explicitly enable it), never sent over the network and never logged. Password fields and secure input mode are ignored automatically.";
+"settings.privacy.clear" = "Clear all local data";
+"settings.privacy.cleared" = "Local data cleared: diary, personal dictionary and statistics removed, rules reset.";
 
 /* Import/Export */
 "import.error.format" = "The file is not a SmartSwitcher configuration.";
@@ -83,7 +83,7 @@
 "settings.tab.account" = "Account";
 "account.pro" = "Pro plan active";
 "account.free" = "Free plan";
-"account.about" = "The core (detection and layout switching) is free and open. The Pro plan adds sync, advanced features, and priority support.";
+"account.about" = "The core (layout detection and switching, hotkeys, personal dictionary) is free and open. Pro adds iCloud sync, text expansion and priority support.";
 "account.enter" = "Enter your license key:";
 "account.key" = "License key";
 "account.activate" = "Activate";
@@ -96,7 +96,7 @@
 
 /* Sync (15) */
 "settings.sync" = "Sync settings via iCloud";
-"settings.sync.note" = "Only settings and rules are synced — never typed text. Enabled in a signed release build.";
+"settings.sync.note" = "Only settings and rules are synced — never typed text. Word lists are merged across devices. Works in the signed release build.";
 
 /* Notifications (FR-8) */
 "settings.notifications" = "Notify when switching";
@@ -105,7 +105,7 @@
 /* Languages */
 "settings.tab.languages" = "Languages";
 "settings.languages.active" = "Active detection layouts";
-"settings.languages.note" = "Correction is applied only to active layouts. Interface languages and detection languages are independent. The architecture is ready for new layouts.";
+"settings.languages.note" = "Corrections happen only into active layouts. Any macOS layout variant is supported: Russian and Russian – PC, ABC, British, Dvorak, Colemak — tables are built from your installed layouts.";
 "language.ru" = "Russian (RU)";
 "language.en" = "English (EN)";
 
@@ -129,6 +129,46 @@
 "settings.updates.channel" = "Update channel";
 "settings.updates.stable" = "Stable";
 "settings.updates.beta" = "Beta";
-"settings.updates.auto" = "Check for updates automatically";
+"settings.updates.auto" = "Check for updates automatically (once a day)";
 "settings.updates.check" = "Check Now";
-"settings.updates.note" = "Full auto-update via Sparkle will arrive in the release version. For now, checking opens the releases page.";
+"settings.updates.note" = "New versions are published in GitHub Releases. Automatic installation via Sparkle will arrive in the signed release build.";
+
+/* v0.4 */
+"account.dev" = "Development build: Pro features are unlocked.";
+"common.later" = "Later";
+"menu.update.available" = "⬆︎ Version %@ is available — open";
+"settings.apps.manual" = "Manual only (terminals, IDEs):";
+"settings.apps.note" = "By default SmartSwitcher fixes the layout everywhere. For specific apps you can keep only manual correction (Double-Shift, selection hotkeys) or turn it off completely.";
+"settings.apps.off" = "Completely off (password managers):";
+"settings.feedback" = "Feedback";
+"settings.hotkey.backspace" = "Backspace right after a correction undoes it";
+"settings.hotkey.backspace.note" = "Handy, but gets in the way when you delete the space after a word to type a comma.";
+"settings.hotkey.backspace.section" = "Undo";
+"settings.hotkey.sel.case" = "Invert case";
+"settings.hotkey.sel.layout" = "Switch layout";
+"settings.hotkey.sel.translit" = "Transliterate";
+"settings.hotkey.selection" = "Selected text";
+"settings.hotkey.selection.enable" = "Hotkeys for selected text";
+"settings.hotkey.shift" = "Shift";
+"settings.hud" = "Show the layout next to the cursor";
+"settings.learn" = "Learn from my typing (personal dictionary)";
+"settings.privacy.clearPersonal" = "Clear personal dictionary";
+"settings.privacy.clearStats" = "Reset statistics";
+"settings.privacy.personal" = "Personal dictionary: %d words (only hashes are stored).";
+"settings.reliable" = "Reliable mode";
+"settings.reliable.note" = "Input is held for a few milliseconds while a word is being fixed: fast typing never mixes with the retyped word, and the word before Enter gets fixed too. Uses an active keyboard tap (never longer than 0.5 s).";
+"settings.tab.apps" = "Apps";
+"settings.tab.statistics" = "Statistics";
+"settings.updates.available" = "Version %@ is available.";
+"settings.updates.current" = "Current version";
+"settings.updates.failed" = "Could not check for updates.";
+"settings.updates.open" = "Open release page";
+"settings.updates.unconfigured" = "No update source is configured in this build.";
+"settings.updates.uptodate" = "You have the latest version.";
+"stats.auto" = "Auto-corrections";
+"stats.chart" = "Corrections over 14 days";
+"stats.manual" = "Manual";
+"stats.privacy" = "Only daily counters are stored (up to 90 days) — never a single word.";
+"stats.saved" = "Keystrokes saved";
+"stats.today" = "Today";
+"stats.undo" = "Undone";

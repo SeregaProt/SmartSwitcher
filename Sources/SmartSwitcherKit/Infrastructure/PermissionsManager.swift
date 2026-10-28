@@ -10,7 +10,9 @@ public enum PermissionsManager {
 
     /// Показывает системный диалог запроса прав.
     public static func requestWithPrompt() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+        // Значение kAXTrustedCheckOptionPrompt; глобальная var из C-заголовка
+        // не concurrency-safe в Swift 6.
+        let options = ["AXTrustedCheckOptionPrompt": true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
     }
 

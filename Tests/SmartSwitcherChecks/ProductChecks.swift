@@ -133,8 +133,10 @@ func runProductChecks() {
         expect(UpdateService.isNewer("v1.10.0", than: "1.9.9"), "v1.10.0 > 1.9.9 (числовое сравнение)")
         expect(!UpdateService.isNewer("0.3.0", than: "0.3.0"), "равные версии")
         expect(!UpdateService.isNewer("0.3", than: "0.3.0"), "0.3 == 0.3.0")
-        let unconfigured = UpdateService(preferences: Preferences(defaults: freshDefaults("com.smartswitcher.upd")))
-        expect(!unconfigured.isConfigured, "без SSGitHubRepository проверка выключена")
+        let configured = MainActor.assumeIsolated {
+            UpdateService(preferences: Preferences(defaults: freshDefaults("com.smartswitcher.upd"))).isConfigured
+        }
+        expect(!configured, "без SSGitHubRepository проверка выключена")
     }
 
     suite("Статистика: только счётчики") {

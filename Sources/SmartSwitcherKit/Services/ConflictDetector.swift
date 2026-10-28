@@ -4,7 +4,7 @@ import Foundation
 /// Обнаружение конкурирующих перехватчиков клавиатуры (раздел 21 ТЗ):
 /// Karabiner, Keyboard Maestro, другие свитчеры. При конфликте приложение
 /// продолжает работать, но предупреждает пользователя.
-public final class ConflictDetector {
+public final class ConflictDetector: Sendable {
     public init() {}
 
     /// Количество чужих активных event tap'ов, слушающих клавиатуру.

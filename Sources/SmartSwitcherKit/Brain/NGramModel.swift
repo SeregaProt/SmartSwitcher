@@ -8,7 +8,9 @@ import Foundation
 /// Оценка слова — средний log10 P по всем позициям `^^слово$`.
 /// Отложенная оценка (docs/DICTIONARIES.md): на словах вне словаря
 /// триграммы ловят ~80% ошибок раскладки против ~50% у биграмм.
-public final class NGramModel {
+///
+/// `@unchecked Sendable`: таблицы защищены `lock`.
+public final class NGramModel: @unchecked Sendable {
     /// Вес триграммной части в интерполяции.
     public static let trigramWeight = 0.7
     /// Штраф за позицию, не встречавшуюся ни в одной n-грамме.

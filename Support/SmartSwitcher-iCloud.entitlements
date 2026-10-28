@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Шаблон для релиза с синхронизацией (ADR-0007): Tools/release.sh
+	     подставляет TEAM_ID и встраивает provisioning profile. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<false/>
+	<key>com.apple.application-identifier</key>
+	<string>TEAM_ID.com.smartswitcher.app</string>
+	<key>com.apple.developer.team-identifier</key>
+	<string>TEAM_ID</string>
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>TEAM_ID.com.smartswitcher.app</string>
+</dict>
+</plist>

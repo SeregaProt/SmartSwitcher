@@ -7,7 +7,9 @@ import Foundation
 /// забирает нажатия пользователя сюда, а после замены воспроизводит их
 /// в исходном порядке — быстрый набор не смешивается с перенабором.
 /// Предохранитель: удержание не дольше `maxHold`, даже если движок завис.
-public final class InputGate {
+///
+/// `@unchecked Sendable`: всё состояние защищено `lock`.
+public final class InputGate: @unchecked Sendable {
     public static let maxHold: TimeInterval = 0.5
 
     private let lock = NSLock()

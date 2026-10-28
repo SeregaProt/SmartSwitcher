@@ -8,8 +8,11 @@ import CoreGraphics
 /// Надёжный режим (ADR-0008) включает активный tap: на время перенабора
 /// нажатия придерживаются в `InputGate`, а Enter — пока исправляется слово.
 /// Tap крутится на выделенном потоке с собственным run loop.
-public final class EventTapManager {
-    public enum TapEvent {
+///
+/// `@unchecked Sendable`: tap и run loop создаются/останавливаются на главном
+/// потоке, поток tap только читает их; обработчики задаются один раз при старте.
+public final class EventTapManager: @unchecked Sendable {
+    public enum TapEvent: Sendable {
         case keyDown(keyCode: Int64, flags: CGEventFlags, characters: String)
         case flagsChanged(keyCode: Int64, flags: CGEventFlags, timestamp: TimeInterval)
         case mouseDown

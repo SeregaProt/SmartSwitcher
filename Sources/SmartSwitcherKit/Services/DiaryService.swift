@@ -7,8 +7,11 @@ import Foundation
 /// - записи шифруются AES-GCM, ключ — в Keychain;
 /// - файл живёт только локально (Application Support), в сеть не уходит;
 /// - дневник очищается одной кнопкой; при выключении запись прекращается.
-public final class DiaryService {
-    public struct Entry: Codable, Equatable {
+///
+/// `@unchecked Sendable`: файл читается и пишется только на `queue`;
+/// флаг включения — из потокобезопасного снимка настроек.
+public final class DiaryService: @unchecked Sendable {
+    public struct Entry: Codable, Equatable, Sendable {
         public let date: Date
         public let original: String
         public let corrected: String
@@ -41,7 +44,7 @@ public final class DiaryService {
     }
 
     public func record(original: String, corrected: String, app: String?, manual: Bool) {
-        guard preferences.diaryEnabled else { return }
+        guard preferences.engine.diaryEnabled else { return }
         let entry = Entry(date: Date(), original: original, corrected: corrected, app: app, manual: manual)
         queue.async { [self] in
             var entries = readAll()

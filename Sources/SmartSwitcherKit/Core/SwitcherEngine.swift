@@ -9,7 +9,10 @@ import Foundation
 /// возвращается мгновенно (низкая латентность горячего пути, NFR < 5 мс),
 /// а состояние буфера и детектора жестов не требует блокировок.
 /// Настройки читаются из потокобезопасного снимка `Preferences.engine`.
-public final class SwitcherEngine {
+///
+/// `@unchecked Sendable`: изменяемое состояние трогается только на `queue`,
+/// `onCorrection` задаётся один раз при сборке приложения.
+public final class SwitcherEngine: @unchecked Sendable {
     private enum KeyCode {
         static let backspace: Int64 = 51
         static let forwardDelete: Int64 = 117

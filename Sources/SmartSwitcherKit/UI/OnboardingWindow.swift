@@ -4,6 +4,7 @@ import SwiftUI
 /// Пошаговый мастер первого запуска (раздел 4.4 ТЗ): приветствие и приватность,
 /// выдача прав Accessibility с живым статусом, выбор языков детекта, тур по
 /// хоткеям. Показывается, пока онбординг не пройден.
+@MainActor
 public final class OnboardingWindowController {
     private var window: NSWindow?
     private let preferences: Preferences

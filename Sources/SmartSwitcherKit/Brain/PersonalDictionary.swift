@@ -8,7 +8,9 @@ import Foundation
 ///
 /// Приватность (раздел 11): на диске хранятся только 64-битные солёные
 /// хеши слов, а не сами слова; файл локальный и очищается одной кнопкой.
-public final class PersonalDictionary {
+///
+/// `@unchecked Sendable`: счётчики защищены `lock`, запись на диск — на `ioQueue`.
+public final class PersonalDictionary: @unchecked Sendable {
     /// Сколько раз слово должно быть оставлено без правок, чтобы стать «своим».
     public static let confirmationsToLearn: UInt8 = 3
     private static let maxEntries = 20_000

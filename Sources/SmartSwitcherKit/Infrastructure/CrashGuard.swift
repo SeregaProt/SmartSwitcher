@@ -13,7 +13,8 @@ public enum CrashGuard {
     /// выделять память, интерполировать строки и вызывать Foundation —
     /// допустимы только async-signal-safe функции (`write`, `signal`, `raise`).
     private static let message: [UInt8] = Array("SmartSwitcher: фатальный сигнал, см. отчёт ReportCrash\n".utf8)
-    private static var messageBuffer: UnsafeMutablePointer<UInt8>?
+    /// Пишется один раз в `install()` до установки обработчиков, дальше только читается.
+    nonisolated(unsafe) private static var messageBuffer: UnsafeMutablePointer<UInt8>?
 
     public static func install() {
         NSSetUncaughtExceptionHandler { exception in

@@ -20,7 +20,7 @@ let package = Package(
                 .process("Resources/ru.lproj"),
                 .process("Resources/en.lproj"),
             ],
-            swiftSettings: [.swiftLanguageMode(.v5)]
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .executableTarget(
             name: "SmartSwitcher",

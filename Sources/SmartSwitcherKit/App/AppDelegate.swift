@@ -3,6 +3,7 @@ import Combine
 
 /// Жизненный цикл приложения: сборка модулей, онбординг прав Accessibility,
 /// запуск event tap, предупреждение о конфликтующих утилитах.
+@MainActor
 public final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferences: Preferences!
     private var layouts: LayoutController!
@@ -207,14 +208,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Раздел 21 ТЗ: предупреждаем о других активных перехватчиках клавиатуры.
     private func checkForConflicts() {
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            guard let self else { return }
-            let competing = self.conflicts.competingKeyboardTaps()
+        let conflicts = self.conflicts!
+        DispatchQueue.global(qos: .utility).async {
+            let competing = conflicts.competingKeyboardTaps()
             if competing > 0 {
                 Log.app.warning("Обнаружено конкурирующих keyboard event tap: \(competing)")
             }
-            DispatchQueue.main.async {
-                self.menuBar.setConflictWarningVisible(competing > 0)
+            DispatchQueue.main.async { [weak self] in
+                self?.menuBar.setConflictWarningVisible(competing > 0)
             }
         }
     }
@@ -238,11 +239,14 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private func awaitPermission() {
         menuBar.setPermissionWarningVisible(true)
         permissionPollTimer?.invalidate()
+        // Таймер добавлен в run loop главного потока — там и срабатывает.
         permissionPollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
             guard PermissionsManager.isTrusted else { return }
             timer.invalidate()
-            self?.permissionPollTimer = nil
-            self?.startEngine()
+            MainActor.assumeIsolated {
+                self?.permissionPollTimer = nil
+                self?.startEngine()
+            }
             Log.app.info("Права Accessibility получены, движок запущен")
         }
     }

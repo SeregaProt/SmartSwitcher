@@ -6,6 +6,7 @@ import AppKit
 /// Текст берётся через буфер обмена (⌘C → преобразование → ⌘V); исходное
 /// содержимое буфера восстанавливается. Работает только по явному действию
 /// пользователя, текст никуда не сохраняется.
+@MainActor
 public final class SelectionConverter {
     public enum Transform {
         case layout
@@ -62,7 +63,7 @@ public final class SelectionConverter {
     // MARK: - Чистые преобразования (покрыты тестами)
 
     /// Конвертация в «другую» раскладку по преобладающей письменности.
-    public static func convertLayout(_ text: String, converter: LayoutConverting) -> (text: String, target: Layout)? {
+    public nonisolated static func convertLayout(_ text: String, converter: LayoutConverting) -> (text: String, target: Layout)? {
         let latin = text.filter(TokenUtils.isLatinLetter).count
         let cyrillic = text.filter(TokenUtils.isCyrillicLetter).count
         guard latin + cyrillic > 0 else { return nil }
@@ -71,7 +72,7 @@ public final class SelectionConverter {
         return (converter.convertLenient(text, from: source, to: target), target)
     }
 
-    public static func invertCase(_ text: String) -> String {
+    public nonisolated static func invertCase(_ text: String) -> String {
         String(text.map { ch -> String in
             let s = String(ch)
             if ch.isUppercase { return s.lowercased() }
@@ -80,7 +81,7 @@ public final class SelectionConverter {
         }.joined())
     }
 
-    private static let cyrillicToLatin: [Character: String] = [
+    private nonisolated static let cyrillicToLatin: [Character: String] = [
         "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo",
         "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
         "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
@@ -89,7 +90,7 @@ public final class SelectionConverter {
     ]
 
     /// Латиница → кириллица: сначала длинные сочетания.
-    private static let latinToCyrillic: [(String, String)] = [
+    private nonisolated static let latinToCyrillic: [(String, String)] = [
         ("shch", "щ"), ("zh", "ж"), ("kh", "х"), ("ts", "ц"), ("ch", "ч"),
         ("sh", "ш"), ("yo", "ё"), ("yu", "ю"), ("ya", "я"),
         ("a", "а"), ("b", "б"), ("v", "в"), ("g", "г"), ("d", "д"), ("e", "е"),
@@ -100,7 +101,7 @@ public final class SelectionConverter {
     ]
 
     /// Транслитерация в обе стороны по преобладающей письменности.
-    public static func transliterate(_ text: String) -> String {
+    public nonisolated static func transliterate(_ text: String) -> String {
         let latin = text.filter(TokenUtils.isLatinLetter).count
         let cyrillic = text.filter(TokenUtils.isCyrillicLetter).count
         if cyrillic >= latin {

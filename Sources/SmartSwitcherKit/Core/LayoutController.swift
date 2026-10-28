@@ -14,7 +14,10 @@ import Foundation
 /// Для каждого языка запоминается последний использованный input source
 /// («Русская» или «Русская – ПК», ABC или Dvorak…): именно он выбирается при
 /// переключении и по нему строятся таблицы конвертации.
-public final class LayoutController {
+///
+/// Потокобезопасность (`@unchecked Sendable`): кеш текущей раскладки под
+/// `lock`, всё остальное состояние трогается только на главном потоке.
+public final class LayoutController: @unchecked Sendable {
     /// Предпочитаемый источник для языка (только главный поток).
     private var preferred: [Layout: TISInputSource] = [:]
     private let lock = NSLock()

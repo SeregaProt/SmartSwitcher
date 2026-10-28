@@ -7,13 +7,12 @@
 	<key>com.apple.security.app-sandbox</key>
 	<false/>
 
-	<!-- Hardened runtime: разрешения, нужные для перехвата/инъекции ввода. -->
+	<!-- Hardened runtime: проверка подписи библиотек остаётся включённой. -->
 	<key>com.apple.security.cs.disable-library-validation</key>
 	<false/>
 
-	<!-- iCloud key-value синхронизация настроек (раздел 15). Идентификатор
-	     активируется при подписи Developer ID с провижнингом. -->
-	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
-	<string>$(TeamIdentifierPrefix)com.smartswitcher.app</string>
+	<!-- iCloud KVS здесь намеренно нет: это ограниченное entitlement, без
+	     встроенного provisioning profile приложение не запустится. Сборка
+	     с синхронизацией использует SmartSwitcher-iCloud.entitlements. -->
 </dict>
 </plist>

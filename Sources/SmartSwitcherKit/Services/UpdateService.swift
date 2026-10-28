@@ -8,6 +8,7 @@ import AppKit
 /// пока через страницу релиза; Sparkle (appcast, EdDSA, дельты) подключается
 /// с Developer ID (docs/adr/0006-updates-deferred-sparkle.md), интерфейс
 /// сервиса при этом не меняется.
+@MainActor
 public final class UpdateService {
     public enum Channel: String, CaseIterable {
         case stable
@@ -62,7 +63,7 @@ public final class UpdateService {
     }
 
     /// Ручная проверка по действию пользователя; результат — на главном потоке.
-    public func check(completion: @escaping (CheckResult) -> Void) {
+    public func check(completion: @escaping @MainActor (CheckResult) -> Void) {
         guard let repository,
               let url = URL(string: "https://api.github.com/repos/\(repository)/releases?per_page=10") else {
             completion(.failed)
@@ -104,14 +105,14 @@ public final class UpdateService {
 
     // MARK: - Сравнение версий
 
-    struct Release: Decodable {
+    struct Release: Decodable, Sendable {
         let tag_name: String
         let html_url: URL
         let prerelease: Bool
         let draft: Bool
     }
 
-    static func evaluate(_ releases: [Release], current: String, includeBeta: Bool) -> CheckResult {
+    nonisolated static func evaluate(_ releases: [Release], current: String, includeBeta: Bool) -> CheckResult {
         let candidates = releases.filter { !$0.draft && (includeBeta || !$0.prerelease) }
         guard let newest = candidates.max(by: { isNewer($1.tag_name, than: $0.tag_name) }) else {
             return .upToDate
@@ -123,7 +124,7 @@ public final class UpdateService {
     }
 
     /// Семантическое сравнение "1.10.0" > "1.9.2"; префикс "v" игнорируется.
-    public static func isNewer(_ candidate: String, than current: String) -> Bool {
+    public nonisolated static func isNewer(_ candidate: String, than current: String) -> Bool {
         let a = components(candidate), b = components(current)
         for i in 0..<max(a.count, b.count) {
             let x = i < a.count ? a[i] : 0
@@ -133,11 +134,11 @@ public final class UpdateService {
         return false
     }
 
-    private static func normalized(_ tag: String) -> String {
+    private nonisolated static func normalized(_ tag: String) -> String {
         tag.hasPrefix("v") || tag.hasPrefix("V") ? String(tag.dropFirst()) : tag
     }
 
-    private static func components(_ version: String) -> [Int] {
+    private nonisolated static func components(_ version: String) -> [Int] {
         normalized(version)
             .split(whereSeparator: { $0 == "." || $0 == "-" })
             .map { Int($0.prefix { $0.isNumber }) ?? 0 }

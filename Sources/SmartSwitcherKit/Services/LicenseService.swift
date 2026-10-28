@@ -12,13 +12,16 @@ import Foundation
 /// где payload — JSON {email, plan, expiry}, подписанный Ed25519-ключом
 /// издателя. Приложение проверяет подпись встроенным публичным ключом — без
 /// обращения к сети. Валидная лицензия хранится в Keychain (раздел 11/22).
-public final class LicenseService: ObservableObject {
-    public enum Plan: String, Codable, Equatable {
+///
+/// `@unchecked Sendable`: `current` меняется только на главном потоке,
+/// остальное состояние неизменяемо после init.
+public final class LicenseService: ObservableObject, @unchecked Sendable {
+    public enum Plan: String, Codable, Equatable, Sendable {
         case free
         case pro
     }
 
-    public struct License: Codable, Equatable {
+    public struct License: Codable, Equatable, Sendable {
         public let email: String
         public let plan: Plan
         /// Unix-время окончания (0 — бессрочно).

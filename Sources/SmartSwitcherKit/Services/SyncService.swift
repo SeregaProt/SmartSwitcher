@@ -11,7 +11,10 @@ import Foundation
 ///
 /// Без iCloud-entitlement KVS-операции безопасно ничего не делают — функция
 /// включается в релизной сборке с provisioning profile (ADR-0007).
-public final class SyncService {
+///
+/// `@unchecked Sendable`: всё состояние трогается только на главном потоке
+/// (внешние уведомления KVS перенаправляются на `DispatchQueue.main`).
+public final class SyncService: @unchecked Sendable {
     private enum Key {
         static let snapshot = "config.snapshot"
         static let timestamp = "config.timestamp"

@@ -2,8 +2,11 @@ import Foundation
 
 /// Экспорт/импорт настроек и правил в человекочитаемый JSON (раздел 24 ТЗ).
 /// Синхронизируются только настройки — никогда набранный текст (раздел 15).
-public final class ImportExportService {
-    public struct Snapshot: Codable, Equatable {
+///
+/// `Sendable`: неизменяемая ссылка на потокобезопасные `Preferences`;
+/// применение импорта всегда выполняется на главном потоке.
+public final class ImportExportService: Sendable {
+    public struct Snapshot: Codable, Equatable, Sendable {
         public var version: Int
         public var enabled: Bool
         public var soundEnabled: Bool
@@ -24,7 +27,7 @@ public final class ImportExportService {
     }
 
     /// Как применять импорт.
-    public enum Mode {
+    public enum Mode: Sendable {
         /// Файл от пользователя: заменить всё, включая «включено».
         case replace
         /// Синхронизация: списки слов сливаются по меткам времени,
@@ -87,7 +90,7 @@ public final class ImportExportService {
         let sanitize: ([String]) -> [String] = { list in
             Array(list.prefix(5000)).map { String($0.prefix(64)) }.filter { !$0.isEmpty }
         }
-        let apply = { [preferences] in
+        let apply: @MainActor () -> Void = { [preferences] in
             if mode == .replace { preferences.enabled = snapshot.enabled }
             preferences.soundEnabled = snapshot.soundEnabled
             preferences.excludedApps = sanitize(snapshot.excludedApps)
@@ -136,7 +139,11 @@ public final class ImportExportService {
             if let v = snapshot.doubleShiftFixEnabled { preferences.doubleShiftFixEnabled = v }
             if let v = snapshot.singleShiftSwitchEnabled { preferences.singleShiftSwitchEnabled = v }
         }
-        if Thread.isMainThread { apply() } else { DispatchQueue.main.async(execute: apply) }
+        if Thread.isMainThread {
+            MainActor.assumeIsolated(apply)
+        } else {
+            DispatchQueue.main.async { apply() }
+        }
     }
 }
 

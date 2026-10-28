@@ -4,6 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// Окно настроек (FR-10): боковая навигация по разделам (раздел 4.3 ТЗ).
+@MainActor
 public final class SettingsWindowController {
     private var window: NSWindow?
     private let dependencies: SettingsDependencies

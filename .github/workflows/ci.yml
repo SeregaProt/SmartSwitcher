@@ -7,21 +7,20 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    # Package.swift требует swift-tools 6.0 (Swift 6 language mode) —
+    # нужен Xcode 16+, на macos-14 по умолчанию Xcode 15.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
       - name: Swift version
         run: swift --version
 
-      - name: Build (release)
+      - name: Build (release, Swift 6 strict concurrency)
         run: swift build -c release
 
-      - name: Checks (unit + детекторные метрики + бенчмарк)
+      - name: Checks (unit + метрики детектора + бенчмарк)
         run: swift run -c release SmartSwitcherChecks
-
-      - name: Integration (реальный движок + перенабор)
-        run: swift run -c release SmartSwitcherIntegration
 
       - name: Bundle
         run: make bundle
@@ -32,12 +31,16 @@ jobs:
           name: SmartSwitcher.app
           path: dist/SmartSwitcher.app
 
+  # Интеграционный тест печатает в собственное окно и требует GUI-сессии
+  # с правом на синтетический ввод — на облачных раннерах его нет.
+  # Запускается локально: `make integration`.
+
   lint:
-    runs-on: macos-14
+    runs-on: macos-15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: SwiftLint
         run: |
           brew install swiftlint
-          swiftlint --strict || true
+          swiftlint --strict

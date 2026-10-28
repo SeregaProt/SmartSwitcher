@@ -4,6 +4,7 @@ import AppKit
 /// короткая плашка «RU»/«EN», которая гаснет сама. Не забирает фокус
 /// и не перехватывает мышь. Позиция каретки — через Accessibility,
 /// если приложение её не отдаёт — рядом с указателем мыши.
+@MainActor
 public final class CorrectionHUD {
     private static let messagingTimeout: Float = 0.1
 
@@ -33,7 +34,7 @@ public final class CorrectionHUD {
                 context.duration = 0.25
                 panel?.animator().alphaValue = 0
             } completionHandler: {
-                panel?.orderOut(nil)
+                MainActor.assumeIsolated { panel?.orderOut(nil) }
             }
         }
         hideWorkItem = work

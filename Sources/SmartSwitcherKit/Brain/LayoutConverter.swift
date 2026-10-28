@@ -24,7 +24,7 @@ public extension LayoutConverting {
 }
 
 /// Статическая таблица US QWERTY ↔ «Русская – ПК». Фолбэк и эталон для тестов.
-public final class StaticLayoutConverter: LayoutConverting {
+public final class StaticLayoutConverter: LayoutConverting, Sendable {
     public init() {}
 
     public func convert(_ text: String, from source: Layout, to target: Layout) -> String? {
@@ -46,7 +46,9 @@ public final class StaticLayoutConverter: LayoutConverting {
 /// клавишам: символ раскладки A → та же клавиша (и Shift) → символ раскладки B.
 ///
 /// `rebuild` вызывается на главном потоке (TIS); `convert` — из любого потока.
-public final class SystemLayoutConverter: LayoutConverting {
+///
+/// `@unchecked Sendable`: таблицы защищены `lock`.
+public final class SystemLayoutConverter: LayoutConverting, @unchecked Sendable {
     private struct Pair: Hashable {
         let source: Layout
         let target: Layout

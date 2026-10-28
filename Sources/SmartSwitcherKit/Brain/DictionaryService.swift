@@ -3,7 +3,9 @@ import Foundation
 /// Словари частотных слов (фаза 2, FR-2). Загружаются лениво из ресурсов
 /// бандла (top-9000 на язык из корпуса OpenSubtitles, hermitdave/FrequencyWords,
 /// CC-BY-SA — см. docs/DICTIONARIES.md).
-public final class DictionaryService {
+///
+/// `@unchecked Sendable`: кеш защищён `lock`.
+public final class DictionaryService: @unchecked Sendable {
     private var cache: [Layout: Set<String>] = [:]
     private let lock = NSLock()
 
