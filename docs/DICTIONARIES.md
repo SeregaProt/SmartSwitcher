@@ -1,60 +1,87 @@
 # Формат словарей и моделей детектора
 
-Документация по данным «мозга» (ТЗ 6.2). Все файлы лежат в
+Документация по данным «мозга» (ТЗ 6.2). Ресурсы лежат в
 `Sources/SmartSwitcherKit/Resources/` и регенерируются скриптом
-`Tools/generate_language_data.py` (источник — см. NOTICE и ADR-0004).
+`Tools/generate_language_data.py` (источник — hermitdave/FrequencyWords,
+см. NOTICE и ADR-0004).
 
 ## Словари слов: `{ru,en}_words.txt`
 
 - Одно слово в строке, нижний регистр, NFC.
 - Отсортированы по убыванию частоты, top-9000 на язык.
-- Фильтр: только буквы соответствующего алфавита (`[а-яё]+` / `[a-z']+`),
-  без цифр и дефисов.
+- Фильтр: только буквы соответствующего алфавита (`[а-яё]+` / `[a-z']+`).
 - Загружаются в `Set<String>` (DictionaryService), ленивая инициализация.
 
-## Биграммные модели: `{ru,en}_bigrams.tsv`
+## Символьная модель: `{ru,en}_ngrams.tsv`
 
-- Строка: `биграмма<TAB>log10_вероятность`.
-- Биграммы считаются по словам с маркерами границ: слово `кот` даёт
-  `^к`, `ко`, `от`, `т$`. Маркеры позволяют модели учитывать характерные
-  начала/окончания слов.
-- Частоты взвешены корпусной частотой слова; вероятность —
-  `count(биграмма) / суммарное число биграмм корпуса`.
-- Невиданная биграмма получает floor `-6.5` (NGramModel.floorLogP).
+Условная модель символов с интерполяцией триграмм и биграмм:
+
+- `bc<TAB>P(c|b)` — биграммная часть (ключ из 2 символов);
+- `abc<TAB>P(c|ab)` — триграммная часть (ключ из 3 символов);
+- границы слова: `^^` в начале, `$` в конце; апострофы отбрасываются;
+- частоты взвешены корпусной частотой слова; обучение — на рангах 1…40 000.
 
 ## Оценка слова
 
-`NGramModel.score(word, layout)` = средний log10 P по биграммам `^word$`
-(только буквы, lowercased). Типичные значения: частое слово ≈ −1,8…−2,6;
-мусор чужой раскладки ≈ −4…−6.
+`NGramModel.score(word, layout)` — средний log10 P по позициям `^^word$`,
+где P = 0,7·P(c|ab) + 0,3·P(c|b); позиция без статистики получает −6
+(`NGramModel.floorLogP`). Типично: слово языка ≈ −1,1 (5-й перцентиль −1,6),
+мусор чужой раскладки ≈ −3,3 (95-й перцентиль −2,1).
 
 ## Решающее правило (StatisticalDetector)
 
-1. Стоп-листы (`StopRules`) → keep.
-2. Ядро токена в словаре языка набора → keep.
-3. Конвертация в словаре другого языка и `score(цель) > score(источник)` → correct.
-4. Вне словарей: `score(источник) < −3.2` И `score(цель) > −2.6` И разрыв
-   `> 1.2` → correct; иначе keep.
+1. Caps Lock и токен ЗАГЛАВНЫМИ → анализ строчной формы, ответ капсом.
+2. Стоп-листы (`StopRules`) → keep.
+3. Одна буква → исправляется только по контексту фразы (`d` после русских
+   слов → `в`), и только в однобуквенное слово (в, и, к, с, у, о, а, я / a, i).
+4. Ядро токена в словаре (общем или личном) языка набора → keep.
+5. Кандидат (те же клавиши в другой раскладке) в словаре цели и
+   `score(цель) > score(источник)` → correct.
+6. Вне словарей — пороги (источник ниже / цель выше / перевес):
+   строгие −1,4 / −1,4 / 0,4; если предыдущие слова на языке цели —
+   −1,3 / −1,5 / 0,3.
 
-Пороги подобраны по оценочному стенду (Tests/SmartSwitcherChecks):
-recall 96–99%, ложные срабатывания 0,05% на словах вне словаря, 0 — на
-частотных. Регрессионный стенд — обязательный gate CI (ТЗ 16).
+## Метрики (регрессионный gate, `make test`)
+
+Отложенная выборка `Fixtures/eval_*_oov.txt` — слова рангов 40 001+, которых
+нет ни в словаре, ни в обучении модели. До v0.4 recall мерился только на
+словарных словах, и оценка вне словаря была неизвестна.
+
+| Метрика | v0.3 (биграммы) | v0.4 (триграммы) |
+|---|---|---|
+| Recall, словарные слова RU / EN | 96,4% / 99,5% | 98,7% / 99,6% |
+| Recall вне словаря RU / EN | ~51% / ~50% | 89,9% / 82,8% |
+| Recall вне словаря в контексте фразы | — | 93,5% / 89,3% |
+| Ложные срабатывания вне словаря RU / EN | 0,05% / 0,10% | 0,17% / 0,30% |
+| Ложные срабатывания, худший контекст | — | 0,20% / 0,40% |
+| Ложные срабатывания на частотных словах | 0 | 0 |
 
 ## Регенерация
 
 ```bash
-curl -o /tmp/ru_50k.txt https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ru/ru_50k.txt
-curl -o /tmp/en_50k.txt https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_50k.txt
-python3 Tools/generate_language_data.py /tmp/ru_50k.txt ru Sources/SmartSwitcherKit/Resources/ru_words.txt Sources/SmartSwitcherKit/Resources/ru_bigrams.tsv
-python3 Tools/generate_language_data.py /tmp/en_50k.txt en Sources/SmartSwitcherKit/Resources/en_words.txt Sources/SmartSwitcherKit/Resources/en_bigrams.tsv
+mkdir -p /tmp/corpus
+curl -o /tmp/corpus/ru_50k.txt https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/ru/ru_50k.txt
+curl -o /tmp/corpus/en_50k.txt https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_50k.txt
+R=Sources/SmartSwitcherKit/Resources F=Tests/SmartSwitcherChecks/Fixtures
+for l in ru en; do
+  python3 Tools/generate_language_data.py /tmp/corpus/${l}_50k.txt $l \
+    $R/${l}_words.txt $R/${l}_ngrams.tsv $F/eval_${l}_oov.txt
+done
 ```
+
+## Раскладки
+
+Таблицы конвертации строятся по реально установленным раскладкам
+(`SystemLayoutConverter`, `UCKeyTranslate`): «Русская» и «Русская – ПК»,
+ABC/U.S./British, Dvorak, Colemak — без правок кода. Статическая таблица
+`LayoutMapping` (US ↔ «Русская – ПК») — фолбэк и эталон для тестов.
 
 ## Добавление нового языка детекта
 
-1. Раскладка: пара в `Layout` + таблицы в `LayoutMapping`.
-2. Данные: `<lang>_words.txt`, `<lang>_bigrams.tsv` + регистрация ресурсов
-   в Package.swift.
-3. Словарь/модель: ветки в `DictionaryService`/`NGramModel`.
-4. Корпус в оценочный стенд.
+1. `Layout`: новый case; язык input source (`kTISPropertyInputSourceLanguages`).
+2. Данные: `<lang>_words.txt`, `<lang>_ngrams.tsv` + ресурсы в Package.swift.
+3. Определение исходного языка по письменности (`TokenUtils.script`) —
+   для языков с общим алфавитом (uk/ru) нужен отдельный классификатор.
+4. Отложенная выборка в оценочный стенд.
 
 Язык интерфейса (раздел 18 ТЗ) добавляется независимо: новый `<lang>.lproj`.

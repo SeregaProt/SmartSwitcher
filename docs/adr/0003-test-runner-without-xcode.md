@@ -2,6 +2,11 @@
 
 Дата: 2026-06-13. Статус: принято (временно, до полного Xcode).
 
+> Обновление 2026-10-28: в окружении появился Xcode; Command Line Tools
+> с SDK macOS 27 не собирают SwiftUI (`@State` — макрос без плагина),
+> поэтому Makefile собирает через Xcode (`DEVELOPER_DIR`). Свой раннер
+> оставлен: он работает и с CLT, и в CI.
+
 ## Контекст
 Среда разработки — только Command Line Tools: модули `XCTest` и `Testing`
 недоступны (`swift test` падает с «no such module 'Testing'»).
