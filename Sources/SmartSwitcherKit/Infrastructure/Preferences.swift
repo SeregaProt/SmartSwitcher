@@ -31,7 +31,7 @@ public struct EngineSettings: Sendable {
     public var detectionLanguages: Set<Layout> = Set(Layout.allCases)
     public var learnFromTyping = true
     public var backspaceUndoEnabled = false
-    public var reliableMode = false
+    public var reliableMode = true
     public var proUnlocked = true
     public var diaryEnabled = false
 
@@ -248,8 +248,9 @@ public final class Preferences: ObservableObject, @unchecked Sendable {
         didSet { defaults.set(learnFromTyping, forKey: Key.learnFromTyping); publish() }
     }
 
-    /// Надёжный режим (активный tap, opt-in — ADR-0008): ввод придерживается
-    /// на время перенабора, слово перед Enter тоже исправляется.
+    /// Надёжный режим (активный tap, вкл. по умолчанию — ADR-0008): ввод
+    /// придерживается на время перенабора, слово перед Enter тоже исправляется.
+    /// Выключение возвращает чистый listen-only (ADR-0001).
     @Published public var reliableMode: Bool {
         didSet { defaults.set(reliableMode, forKey: Key.reliableMode); publish() }
     }
@@ -306,7 +307,7 @@ public final class Preferences: ObservableObject, @unchecked Sendable {
             Key.expansionRules: [String: String](),
             Key.detectionLanguages: ["en", "ru"],
             Key.learnFromTyping: true,
-            Key.reliableMode: false,
+            Key.reliableMode: true,
             Key.hudEnabled: true,
             Key.updateChannel: "stable",
             Key.autoCheckUpdates: true,

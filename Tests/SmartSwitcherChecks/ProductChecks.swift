@@ -34,6 +34,7 @@ func runProductChecks() {
         prefs.enabled = true
         prefs.pausedUntil = Date().addingTimeInterval(60)
         expect(!prefs.engine.isActive(), "пауза делает движок неактивным")
+        expect(prefs.engine.reliableMode, "надёжный режим включён по умолчанию")
 
         // Конкурентное чтение снимка во время записи не должно падать.
         let group = DispatchGroup()
