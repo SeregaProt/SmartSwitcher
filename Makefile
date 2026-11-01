@@ -30,7 +30,7 @@ bundle: build
 # Universal binary (arm64 + x86_64) для дистрибуции.
 bundle-universal:
 	swift build -c release --arch arm64 --arch x86_64
-	$(MAKE) assemble BINARY=.build/apple/Products/Release/$(APP_NAME)
+	$(MAKE) assemble BINARY=$$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/$(APP_NAME)
 
 assemble:
 	rm -rf dist

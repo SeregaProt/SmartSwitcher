@@ -46,9 +46,13 @@ codesign --force --options runtime \
   --timestamp "$APP"
 codesign --verify --strict --verbose=2 "$APP"
 
-echo "==> Сборка DMG"
+echo "==> Сборка DMG (приложение + ярлык «Программы» для установки перетаскиванием)"
 rm -f "$DMG"
-hdiutil create -volname "SmartSwitcher" -srcfolder "$APP" -ov -format UDZO "$DMG"
+STAGING=$(mktemp -d -t smartswitcher-dmg)
+cp -R "$APP" "$STAGING/"
+ln -s /Applications "$STAGING/Applications"
+hdiutil create -volname "SmartSwitcher" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
+rm -rf "$STAGING"
 codesign --force --sign "$DEVELOPER_ID" --timestamp "$DMG"
 
 echo "==> Нотаризация (ожидание вердикта Apple)"
